@@ -101,7 +101,7 @@
             border-radius: 4px;
         }
         .editable-cell::after {
-            content: " ✎";
+            content: " ?";
             font-size: 10px;
             opacity: 0;
             color: #60a5fa;
@@ -131,11 +131,11 @@
         <div class="flex justify-between items-start w-full">
             <div class="candy-glass-panel p-4 rounded-2xl w-64">
                 <p class="text-[11px] font-black tracking-wider text-blue-300 mb-2">LOGIN MITRA</p>
-                <select id="select-login-mitra" onchange="handleMitraSelect()" class="w-full candy-glass-input px-3 py-1.5 rounded-xl text-xs cursor-pointer no-uppercase">
+                <select id="select-login-mitra" class="w-full candy-glass-input px-3 py-1.5 rounded-xl text-xs cursor-pointer no-uppercase">
                 </select>
                 <div id="mitra-password-box" class="mt-3 hidden">
                     <input type="password" id="mitra-password-input" placeholder="Masukkan Password..." class="w-full candy-glass-input px-3 py-1.5 rounded-xl text-xs mb-2">
-                    <button onclick="submitMitraLogin()" class="w-full candy-btn-glass-blue text-white py-1.5 rounded-xl font-bold text-xs cursor-pointer">
+                    <button id="btn-submit-mitra" class="w-full candy-btn-glass-blue text-white py-1.5 rounded-xl font-bold text-xs cursor-pointer">
                         MASUK MITRA
                     </button>
                 </div>
@@ -144,7 +144,7 @@
             <div class="candy-glass-panel p-4 rounded-2xl w-64">
                 <p class="text-[11px] font-black tracking-wider text-gray-300 mb-2">LOGIN ADMIN</p>
                 <input type="password" id="admin-password-input" placeholder="Password Admin..." class="w-full candy-glass-input px-3 py-1.5 rounded-xl text-xs mb-2">
-                <button onclick="submitAdminLogin()" class="w-full candy-btn-glass-blue text-white py-1.5 rounded-xl font-bold text-xs cursor-pointer">
+                <button id="btn-submit-admin" class="w-full candy-btn-glass-blue text-white py-1.5 rounded-xl font-bold text-xs cursor-pointer">
                     MASUK ADMIN
                 </button>
             </div>
@@ -156,21 +156,21 @@
         </div>
 
         <div class="w-full text-center text-[10px] text-white/40 tracking-widest">
-            CV MAJU BERSAMA &copy; 2026SRISP
+            CV MAJU BERSAMA &copy; 2026
         </div>
     </div>
 
     <div id="mitra-dashboard" class="h-screen max-h-screen hidden flex flex-col bg-slate-900/40 backdrop-blur-md overflow-hidden">
         <header class="bg-white/10 px-6 py-3 flex justify-between items-center border-b border-white/10 flex-shrink-0">
             <h1 class="text-base font-bold text-white">MITRA: <span id="mitra-display-name" class="text-blue-400 no-uppercase"></span></h1>
-            <button onclick="handleLogout()" class="candy-btn-red text-white px-4 py-1.5 text-xs font-bold cursor-pointer">
+            <button id="btn-logout-mitra" class="candy-btn-red text-white px-4 py-1.5 text-xs font-bold cursor-pointer">
                 LOGOUT
             </button>
         </header>
         
         <main class="flex-1 p-4 max-w-7xl w-full mx-auto flex flex-col justify-between overflow-hidden space-y-3">
             <div class="bg-white/10 p-3 rounded-xl border border-white/10 flex-shrink-0">
-                <input type="text" id="search-mitra" oninput="renderMitraTable()" placeholder="CARI NO. POLISI ATAU NAMA BPKB..." class="w-full px-3 py-2 candy-glass-input rounded-xl text-sm font-bold uppercase">
+                <input type="text" id="search-mitra" placeholder="CARI NO. POLISI ATAU NAMA BPKB..." class="w-full px-3 py-2 candy-glass-input rounded-xl text-sm font-bold uppercase">
             </div>
 
             <div class="flex-1 bg-white/5 rounded-xl overflow-y-auto border border-white/10 min-h-0">
@@ -199,7 +199,7 @@
                     <p class="text-[10px] text-green-300 font-bold">SELESAI</p>
                     <p id="stat-mitra-done" class="text-sm font-black text-white">0</p>
                 </div>
-                <button onclick="previewMitraPDF()" class="candy-btn-green text-white text-xs font-bold h-[38px] flex items-center justify-center w-full cursor-pointer">
+                <button id="btn-pdf-mitra" class="candy-btn-green text-white text-xs font-bold h-[38px] flex items-center justify-center w-full cursor-pointer">
                     PRATINJAU PDF
                 </button>
             </div>
@@ -211,13 +211,13 @@
             <div class="flex flex-wrap items-center gap-3">
                 <h1 class="text-sm font-black tracking-widest text-white">ADMIN</h1>
                 <div class="flex gap-1">
-                    <button id="tab-berkas-btn" onclick="switchAdminTab('berkas')" class="px-2 py-1 text-[9px] sm:text-[10px] font-bold rounded-md border border-white/10 bg-white/5 text-gray-300 transition-all cursor-pointer tab-active">
+                    <button id="tab-berkas-btn" class="px-2 py-1 text-[9px] sm:text-[10px] font-bold rounded-md border border-white/10 bg-white/5 text-gray-300 transition-all cursor-pointer tab-active">
                         MANAJEMEN BERKAS
                     </button>
-                    <button id="tab-semua-btn" onclick="switchAdminTab('semua')" class="px-2 py-1 text-[9px] sm:text-[10px] font-bold rounded-md border border-white/10 bg-white/5 text-gray-300 transition-all cursor-pointer">
+                    <button id="tab-semua-btn" class="px-2 py-1 text-[9px] sm:text-[10px] font-bold rounded-md border border-white/10 bg-white/5 text-gray-300 transition-all cursor-pointer">
                         MANAJEMEN SEMUA BERKAS
                     </button>
-                    <button id="tab-konfig-btn" onclick="switchAdminTab('konfig')" class="px-2 py-1 text-[9px] sm:text-[10px] font-bold rounded-md border border-white/10 bg-white/5 text-gray-300 transition-all cursor-pointer">
+                    <button id="tab-konfig-btn" class="px-2 py-1 text-[9px] sm:text-[10px] font-bold rounded-md border border-white/10 bg-white/5 text-gray-300 transition-all cursor-pointer">
                         KONFIGURASI MITRA & LAYANAN
                     </button>
                 </div>
@@ -228,7 +228,7 @@
                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                     <p class="text-[9px] tracking-wider font-bold text-gray-400">ONLINE: <span id="active-mitra-badge" class="text-green-400 online-badge font-mono font-black">TIDAK ADA</span></p>
                 </div>
-                <button onclick="handleLogout()" class="candy-btn-red text-white px-3 py-1 text-[10px] font-bold cursor-pointer">
+                <button id="btn-logout-admin" class="candy-btn-red text-white px-3 py-1 text-[10px] font-bold cursor-pointer">
                     LOGOUT
                 </button>
             </div>
@@ -239,7 +239,7 @@
                 <div class="flex justify-between items-center mb-3 border-b pb-1.5 border-white/10">
                     <h3 class="text-sm font-bold text-blue-300">INPUT DATA BERKAS</h3>
                 </div>
-                <form id="form-input-berkas" onsubmit="saveBerkasManual(event)" class="space-y-2.5">
+                <form id="form-input-berkas" class="space-y-2.5">
                     <div>
                         <label class="block text-[11px] text-gray-300 font-semibold mb-0.5">NAMA MITRA</label>
                         <select id="input-mitra" required class="w-full px-2 py-1 border border-white/10 rounded-lg text-xs bg-slate-800 text-white no-uppercase"></select>
@@ -286,7 +286,7 @@
             <div class="candy-glass-panel p-4 rounded-xl flex flex-col flex-1 min-h-0 overflow-hidden">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-3 gap-2 flex-shrink-0">
                     <h3 class="text-sm font-bold text-white">MANAJEMEN SEMUA BERKAS <span class="text-[10px] block text-blue-300 normal-case font-normal">*Klik pada teks data tabel untuk mengubah langsung (Auto-Save aktif)</span></h3>
-                    <input type="text" id="search-admin" oninput="renderAdminTable()" placeholder="CARI BERKAS..." class="px-2 py-1 border border-white/10 rounded-lg text-xs w-full md:w-48 bg-slate-800 text-white font-bold uppercase">
+                    <input type="text" id="search-admin" placeholder="CARI BERKAS..." class="px-2 py-1 border border-white/10 rounded-lg text-xs w-full md:w-48 bg-slate-800 text-white font-bold uppercase">
                 </div>
                 
                 <div class="flex-1 overflow-y-auto border border-white/5 rounded-lg min-h-0">
@@ -325,8 +325,8 @@
                         <input type="password" id="config-mitra-pass" placeholder="Password Akun Mitra..." class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white">
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="saveMitraConfig()" id="btn-mitra-submit" class="flex-1 candy-btn-blue text-white py-1.5 text-xs font-bold rounded-lg cursor-pointer">TAMBAH/UPDATE MITRA</button>
-                        <button onclick="clearMitraForm()" id="btn-mitra-clear" class="hidden candy-btn-gray text-white px-4 py-1.5 text-xs font-bold rounded-lg cursor-pointer">BATAL</button>
+                        <button id="btn-mitra-submit" class="flex-1 candy-btn-blue text-white py-1.5 text-xs font-bold rounded-lg cursor-pointer">TAMBAH/UPDATE MITRA</button>
+                        <button id="btn-mitra-clear" class="hidden candy-btn-gray text-white px-4 py-1.5 text-xs font-bold rounded-lg cursor-pointer">BATAL</button>
                     </div>
                     
                     <div class="mt-2 border border-white/10 rounded-lg bg-black/20 max-h-40 overflow-y-auto">
@@ -343,8 +343,8 @@
                     <input type="hidden" id="config-pengerjaan-index" value="">
                     <input type="text" id="config-pengerjaan" placeholder="CONTOH LAYANAN: BALIK NAMA..." class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white font-bold uppercase">
                     <div class="flex gap-2">
-                        <button onclick="savePengerjaanConfig()" id="btn-pengerjaan-submit" class="flex-1 candy-btn-blue text-white py-1.5 font-bold text-xs rounded-lg whitespace-nowrap cursor-pointer">TAMBAH/UPDATE LAYANAN</button>
-                        <button onclick="clearPengerjaanForm()" id="btn-pengerjaan-clear" class="hidden candy-btn-gray text-white px-4 py-1.5 text-xs font-bold rounded-lg cursor-pointer">BATAL</button>
+                        <button id="btn-pengerjaan-submit" class="flex-1 candy-btn-blue text-white py-1.5 font-bold text-xs rounded-lg whitespace-nowrap cursor-pointer">TAMBAH/UPDATE LAYANAN</button>
+                        <button id="btn-pengerjaan-clear" class="hidden candy-btn-gray text-white px-4 py-1.5 text-xs font-bold rounded-lg cursor-pointer">BATAL</button>
                     </div>
 
                     <div class="mt-2 border border-white/10 rounded-lg bg-black/20 max-h-40 overflow-y-auto">
@@ -355,34 +355,96 @@
                 </div>
             </div>
             
-            <p class="text-[9px] text-gray-400 text-center normal-case font-semibold mt-1">*Klik & tahan baris ☰ lalu geser ke atas/bawah untuk mengurutkan posisi dropdown menu.</p>
+            <p class="text-[9px] text-gray-400 text-center normal-case font-semibold mt-1">*Klik & tahan baris ? lalu geser ke atas/bawah untuk mengurutkan posisi dropdown menu.</p>
         </main>
     </div>
 
-    <script>
-        let dataMitra = JSON.parse(localStorage.getItem('mitraListArray')) || [
-            { name: "SINARMAS", pass: "sinarmas123" }
-        ];
-        
-        let jenisPengerjaan = JSON.parse(localStorage.getItem('pengerjaanList')) || [
-            "BALIK NAMA", "PERPANJANG STNK", "MUTASI KELUAR"
-        ];
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
-        let dataBerkas = JSON.parse(localStorage.getItem('berkasList')) || [];
-        let dataLog = JSON.parse(localStorage.getItem('logList')) || [];
-        let loggedInUser = null;
-
-        window.onload = function() {
-            document.getElementById('input-tgl-ambil').value = new Date().toISOString().split('T')[0];
-            initLoginMitraSelect();
-            updateOnlineBadge(); 
+        // Konfigurasi Firebase dari file configurasifirebase.txt
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVzMlwshzZigPPTB6fLRqx7aNtS_-MLnE",
+            authDomain: "trackingdokumen-623fd.firebaseapp.com",
+            projectId: "trackingdokumen-623fd",
+            storageBucket: "trackingdokumen-623fd.firebasestorage.app",
+            messagingSenderId: "1070776413205",
+            appId: "1:1070776413205:web:c5df54217830e1b861721c"
         };
 
-        // Fungsi mengecek & menampilkan Mitra yang sedang aktif login
-        function updateOnlineBadge() {
-            const activeUser = localStorage.getItem('activeMitraUser');
+        // Inisialisasi Firebase & Realtime Database
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // State Global Aplikasi
+        let dataMitra = [];
+        let jenisPengerjaan = [];
+        let dataBerkas = [];
+        let dataLog = [];
+        let loggedInUser = null;
+
+        // Referensi Jalur Database
+        const berkasRef = ref(db, 'berkas');
+        const mitraRef = ref(db, 'mitra');
+        const pengerjaanRef = ref(db, 'pengerjaan');
+        const logRef = ref(db, 'logs');
+        const activeUserRef = ref(db, 'activeMitraUser');
+
+        // Sinkronisasi Data Real-time dari Firebase
+        onValue(mitraRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                dataMitra = Object.isArray ? data : Object.values(data);
+            } else {
+                dataMitra = [{ name: "SINARMAS", pass: "sinarmas123" }];
+                set(mitraRef, dataMitra);
+            }
+            initLoginMitraSelect();
+            initAdminForms();
+            renderMitraConfigList();
+        });
+
+        onValue(pengerjaanRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                jenisPengerjaan = Object.isArray ? data : Object.values(data);
+            } else {
+                jenisPengerjaan = ["BALIK NAMA", "PERPANJANG STNK", "MUTASI KELUAR"];
+                set(pengerjaanRef, jenisPengerjaan);
+            }
+            initAdminForms();
+            renderPengerjaanConfigList();
+        });
+
+        onValue(berkasRef, (snapshot) => {
+            const data = snapshot.val();
+            dataBerkas = [];
+            if (data) {
+                for (let key in data) {
+                    dataBerkas.push({ fbKey: key, ...data[key] });
+                }
+            }
+            if (loggedInUser === 'admin') {
+                renderAdminTable();
+            } else if (loggedInUser) {
+                renderMitraTable();
+            }
+        });
+
+        onValue(logRef, (snapshot) => {
+            const data = snapshot.val();
+            dataLog = [];
+            if (data) {
+                dataLog = Object.values(data).reverse();
+            }
+            renderLogs();
+        });
+
+        onValue(activeUserRef, (snapshot) => {
+            const activeUser = snapshot.val();
             const badge = document.getElementById('active-mitra-badge');
-            if(badge) {
+            if (badge) {
                 if (activeUser && activeUser !== 'admin') {
                     badge.innerText = activeUser.toUpperCase();
                     badge.className = "text-green-400 online-badge font-mono font-black";
@@ -391,8 +453,36 @@
                     badge.className = "text-gray-500 online-badge font-mono font-bold";
                 }
             }
-        }
+        });
 
+        // Lifecycle & Setup Awal Dokumen
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('input-tgl-ambil').value = new Date().toISOString().split('T')[0];
+            
+            // Binding Event Listener UI
+            document.getElementById('select-login-mitra').addEventListener('change', handleMitraSelect);
+            document.getElementById('btn-submit-admin').addEventListener('click', submitAdminLogin);
+            document.getElementById('admin-password-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') submitAdminLogin(); });
+            document.getElementById('btn-submit-mitra').addEventListener('click', submitMitraLogin);
+            document.getElementById('mitra-password-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') submitMitraLogin(); });
+            document.getElementById('btn-logout-mitra').addEventListener('click', handleLogout);
+            document.getElementById('btn-logout-admin').addEventListener('click', handleLogout);
+            document.getElementById('form-input-berkas').addEventListener('submit', saveBerkasManual);
+            document.getElementById('btn-mitra-submit').addEventListener('click', saveMitraConfig);
+            document.getElementById('btn-mitra-clear').addEventListener('click', clearMitraForm);
+            document.getElementById('btn-pengerjaan-submit').addEventListener('click', savePengerjaanConfig);
+            document.getElementById('btn-pengerjaan-clear').addEventListener('click', clearPengerjaanForm);
+            document.getElementById('search-admin').addEventListener('input', renderAdminTable);
+            document.getElementById('search-mitra').addEventListener('input', renderMitraTable);
+            document.getElementById('btn-pdf-mitra').addEventListener('click', previewMitraPDF);
+
+            // Tab navigation
+            document.getElementById('tab-berkas-btn').addEventListener('click', () => switchAdminTab('berkas'));
+            document.getElementById('tab-semua-btn').addEventListener('click', () => switchAdminTab('semua'));
+            document.getElementById('tab-konfig-btn').addEventListener('click', () => switchAdminTab('konfig'));
+        });
+
+        // Logika Navigasi Tab Admin Dashboard
         function switchAdminTab(tabName) {
             const berkasContent = document.getElementById('tab-berkas-content');
             const semuaContent = document.getElementById('tab-semua-content');
@@ -424,9 +514,9 @@
                 renderMitraConfigList();
                 renderPengerjaanConfigList();
             }
-            updateOnlineBadge();
         }
 
+        // Fungsi Otentikasi dan Manajemen Sesi
         function initLoginMitraSelect() {
             const select = document.getElementById('select-login-mitra');
             select.innerHTML = `<option value="" disabled selected>-- PILIH NAMA MITRA --</option>`;
@@ -454,10 +544,6 @@
             }
         }
 
-        document.getElementById('admin-password-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') submitAdminLogin();
-        });
-
         function submitMitraLogin() {
             const selectedMitra = document.getElementById('select-login-mitra').value;
             const passInput = document.getElementById('mitra-password-input').value.trim();
@@ -465,16 +551,12 @@
 
             if (mitraObj && mitraObj.pass.toLowerCase() === passInput.toLowerCase()) {
                 loggedInUser = selectedMitra;
-                localStorage.setItem('activeMitraUser', selectedMitra); 
+                set(activeUserRef, selectedMitra); 
                 showDashboard('mitra');
             } else {
                 alert('PASSWORD MITRA SALAH!');
             }
         }
-
-        document.getElementById('mitra-password-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') submitMitraLogin();
-        });
 
         function showDashboard(role) {
             document.getElementById('login-page').classList.add('hidden');
@@ -490,12 +572,11 @@
                 document.getElementById('mitra-display-name').innerText = loggedInUser;
                 renderMitraTable();
             }
-            updateOnlineBadge();
         }
 
         function handleLogout() {
             if(loggedInUser !== 'admin') {
-                localStorage.removeItem('activeMitraUser'); 
+                set(activeUserRef, "TIDAK ADA"); 
             }
             loggedInUser = null;
             document.getElementById('admin-password-input').value = '';
@@ -507,23 +588,27 @@
             document.getElementById('mitra-dashboard').classList.add('hidden');
             document.getElementById('login-page').classList.remove('hidden');
             initLoginMitraSelect();
-            updateOnlineBadge();
         }
 
         function initAdminForms() {
             const selectMitra = document.getElementById('input-mitra');
-            selectMitra.innerHTML = '';
-            dataMitra.forEach(m => {
-                selectMitra.innerHTML += `<option value="${m.name}">${m.name}</option>`;
-            });
+            if(selectMitra) {
+                selectMitra.innerHTML = '';
+                dataMitra.forEach(m => {
+                    selectMitra.innerHTML += `<option value="${m.name}">${m.name}</option>`;
+                });
+            }
 
             const selectKerja = document.getElementById('input-pengerjaan');
-            selectKerja.innerHTML = '';
-            jenisPengerjaan.forEach(j => {
-                selectKerja.innerHTML += `<option value="${j}">${j}</option>`;
-            });
+            if(selectKerja) {
+                selectKerja.innerHTML = '';
+                jenisPengerjaan.forEach(j => {
+                    selectKerja.innerHTML += `<option value="${j}">${j}</option>`;
+                });
+            }
         }
 
+        // CRUD: Manajemen Data Berkas
         function saveBerkasManual(e) {
             if(e) e.preventDefault();
             
@@ -541,18 +626,20 @@
                 return;
             }
 
-            const existingIndex = dataBerkas.findIndex(b => b.nopol === nopolValue && b.tglAmbil === currentTglAmbil);
+            const existing = dataBerkas.find(b => b.nopol === nopolValue && b.tglAmbil === currentTglAmbil);
 
-            if (existingIndex > -1) {
-                dataBerkas[existingIndex] = {
-                    ...dataBerkas[existingIndex],
+            if (existing) {
+                const updatedData = {
                     mitra: currentMitra,
                     pengerjaan: currentPengerjaan,
                     bpkb: currentBpkb,
                     status: currentStatus,
                     catatan: currentCatatan,
-                    tglKembali: currentTglKembali
+                    tglKembali: currentTglKembali,
+                    nopol: nopolValue,
+                    tglAmbil: currentTglAmbil
                 };
+                update(ref(db, `berkas/${existing.fbKey}`), updatedData);
                 logAktivitas("Memperbarui berkas [" + nopolValue + "] secara manual");
             } else {
                 const newBerkas = {
@@ -566,49 +653,42 @@
                     catatan: currentCatatan,
                     tglKembali: currentTglKembali
                 };
-                dataBerkas.push(newBerkas);
+                push(berkasRef, newBerkas);
                 logAktivitas("Menambahkan berkas baru [" + nopolValue + "] untuk " + currentMitra);
             }
 
-            localStorage.setItem('berkasList', JSON.stringify(dataBerkas));
             alert('DATA BERKAS BERHASIL DISIMPAN!');
-            
             document.getElementById('form-input-berkas').reset();
             document.getElementById('input-tgl-ambil').value = new Date().toISOString().split('T')[0];
             initAdminForms();
-            renderAdminTable();
         }
 
-        function changeStatus(id, newStatus) {
-            dataBerkas = dataBerkas.map(b => {
-                if (b.id === id) {
-                    logAktivitas("Mengubah status berkas [" + b.nopol + "] menjadi: " + newStatus.toUpperCase());
-                    return { ...b, status: newStatus };
-                }
-                return b;
-            });
-            localStorage.setItem('berkasList', JSON.stringify(dataBerkas));
-            renderAdminTable();
-        }
-
-        function deleteBerkas(id) {
-            if(confirm('APAKAH ANDA YAKIN INGIN MENGHAPUS DATA BERKAS INI?')) {
-                const b = dataBerkas.find(x => x.id === id);
-                logAktivitas("Menghapus berkas [" + (b ? b.nopol : id) + "]");
-                dataBerkas = dataBerkas.filter(x => x.id !== id);
-                localStorage.setItem('berkasList', JSON.stringify(dataBerkas));
-                renderAdminTable();
+        window.changeStatus = function(fbKey, newStatus) {
+            const b = dataBerkas.find(x => x.fbKey === fbKey);
+            if(b) {
+                logAktivitas("Mengubah status berkas [" + b.nopol + "] menjadi: " + newStatus.toUpperCase());
+                update(ref(db, `berkas/${fbKey}`), { status: newStatus });
             }
         }
 
+        window.deleteBerkas = function(fbKey) {
+            if(confirm('APAKAH ANDA YAKIN INGIN MENGHAPUS DATA BERKAS INI?')) {
+                const b = dataBerkas.find(x => x.fbKey === fbKey);
+                logAktivitas("Menghapus berkas [" + (b ? b.nopol : fbKey) + "]");
+                remove(ref(db, `berkas/${fbKey}`));
+            }
+        }
+
+        // CRUD: Manajemen Konfigurasi Mitra
         function renderMitraConfigList() {
             const container = document.getElementById('list-mitra-config');
+            if(!container) return;
             container.innerHTML = '';
             dataMitra.forEach((m, idx) => {
                 container.innerHTML += `
                     <tr class="border-b border-white/5 hover:bg-white/5 draggable-row" draggable="true" data-index="${idx}">
                         <td class="p-2 font-bold flex items-center gap-2 select-none text-white">
-                            <span class="text-gray-500 text-[10px] cursor-grab">☰</span>
+                            <span class="text-gray-500 text-[10px] cursor-grab">?</span>
                             <span>${m.name}</span>
                         </td>
                         <td class="p-2 text-right space-x-3">
@@ -621,65 +701,21 @@
             setupDragAndDrop('list-mitra-config', 'mitra');
         }
 
-        function renderPengerjaanConfigList() {
-            const container = document.getElementById('list-pengerjaan-config');
-            container.innerHTML = '';
-            jenisPengerjaan.forEach((nama, idx) => {
-                container.innerHTML += `
-                    <tr class="border-b border-white/5 hover:bg-white/5 draggable-row" draggable="true" data-index="${idx}">
-                        <td class="p-2 font-bold flex items-center gap-2 select-none text-white">
-                            <span class="text-gray-500 text-[10px] cursor-grab">☰</span>
-                            <span>${nama}</span>
-                        </td>
-                        <td class="p-2 text-right space-x-3">
-                            <button onclick="editPengerjaan(${idx})" class="text-blue-400 font-bold hover:underline cursor-pointer">EDIT</button>
-                            <button onclick="deletePengerjaan(${idx})" class="text-red-400 font-bold hover:underline cursor-pointer">HAPUS</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            setupDragAndDrop('list-pengerjaan-config', 'pengerjaan');
+        window.editMitra = function(index) {
+            document.getElementById('config-mitra-name').value = dataMitra[index].name;
+            document.getElementById('config-mitra-pass').value = dataMitra[index].pass; 
+            document.getElementById('config-mitra-edit-id').value = index;
+            document.getElementById('btn-mitra-submit').innerText = "UPDATE MITRA";
+            document.getElementById('btn-mitra-clear').classList.remove('hidden');
         }
 
-        function setupDragAndDrop(containerId, type) {
-            const container = document.getElementById(containerId);
-            const rows = container.querySelectorAll('.draggable-row');
-
-            rows.forEach(row => {
-                row.addEventListener('dragstart', () => row.classList.add('dragging'));
-                row.addEventListener('dragend', () => {
-                    row.classList.remove('dragging');
-                    const currentRows = Array.from(container.querySelectorAll('.draggable-row'));
-                    if (type === 'mitra') {
-                        dataMitra = currentRows.map(r => dataMitra[parseInt(r.getAttribute('data-index'))]);
-                        localStorage.setItem('mitraListArray', JSON.stringify(dataMitra));
-                        renderMitraConfigList();
-                    } else if (type === 'pengerjaan') {
-                        jenisPengerjaan = currentRows.map(r => jenisPengerjaan[parseInt(r.getAttribute('data-index'))]);
-                        localStorage.setItem('pengerjaanList', JSON.stringify(jenisPengerjaan));
-                        renderPengerjaanConfigList();
-                    }
-                    initAdminForms(); 
-                });
-            });
-
-            container.addEventListener('dragover', e => {
-                e.preventDefault();
-                const afterElement = getDragAfterElement(container, e.clientY);
-                const dragging = container.querySelector('.dragging');
-                if (afterElement == null) container.appendChild(dragging);
-                else container.insertBefore(dragging, afterElement);
-            });
-        }
-
-        function getDragAfterElement(container, y) {
-            const draggableElements = [...container.querySelectorAll('.draggable-row:not(.dragging)')];
-            return draggableElements.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2;
-                if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
-                else return closest;
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        window.deleteMitra = function(index) {
+            const targetName = dataMitra[index].name;
+            if(confirm("APAKAH ANDA YAKIN INGIN MENGHAPUS MITRA " + targetName + "?")) {
+                dataMitra.splice(index, 1);
+                set(mitraRef, dataMitra);
+                clearMitraForm();
+            }
         }
 
         function saveMitraConfig() {
@@ -695,8 +731,11 @@
             if(editIndex !== "") {
                 const oldName = dataMitra[editIndex].name;
                 if(oldName !== nameInput) {
-                    dataBerkas = dataBerkas.map(b => b.mitra === oldName ? {...b, mitra: nameInput} : b);
-                    localStorage.setItem('berkasList', JSON.stringify(dataBerkas));
+                    dataBerkas.forEach(b => {
+                        if(b.mitra === oldName) {
+                            update(ref(db, `berkas/${b.fbKey}`), { mitra: nameInput });
+                        }
+                    });
                 }
                 dataMitra[editIndex].name = nameInput;
                 if(passInput) dataMitra[editIndex].pass = passInput;
@@ -711,29 +750,8 @@
                 alert("MITRA BARU BERHASIL DITAMBAHKAN!");
             }
             
-            localStorage.setItem('mitraListArray', JSON.stringify(dataMitra));
+            set(mitraRef, dataMitra);
             clearMitraForm();
-            initAdminForms(); 
-            renderMitraConfigList();
-        }
-
-        function editMitra(index) {
-            document.getElementById('config-mitra-name').value = dataMitra[index].name;
-            document.getElementById('config-mitra-pass').value = dataMitra[index].pass; 
-            document.getElementById('config-mitra-edit-id').value = index;
-            document.getElementById('btn-mitra-submit').innerText = "UPDATE MITRA";
-            document.getElementById('btn-mitra-clear').classList.remove('hidden');
-        }
-
-        function deleteMitra(index) {
-            const targetName = dataMitra[index].name;
-            if(confirm("APAKAH ANDA YAKIN INGIN MENGHAPUS MITRA " + targetName + "?")) {
-                dataMitra.splice(index, 1);
-                localStorage.setItem('mitraListArray', JSON.stringify(dataMitra));
-                clearMitraForm();
-                initAdminForms();
-                renderMitraConfigList();
-            }
         }
 
         function clearMitraForm() {
@@ -742,6 +760,43 @@
             document.getElementById('config-mitra-edit-id').value = '';
             document.getElementById('btn-mitra-submit').innerText = "TAMBAH/UPDATE MITRA";
             document.getElementById('btn-mitra-clear').classList.add('hidden');
+        }
+
+        // CRUD: Manajemen Konfigurasi Layanan
+        function renderPengerjaanConfigList() {
+            const container = document.getElementById('list-pengerjaan-config');
+            if(!container) return;
+            container.innerHTML = '';
+            jenisPengerjaan.forEach((nama, idx) => {
+                container.innerHTML += `
+                    <tr class="border-b border-white/5 hover:bg-white/5 draggable-row" draggable="true" data-index="${idx}">
+                        <td class="p-2 font-bold flex items-center gap-2 select-none text-white">
+                            <span class="text-gray-500 text-[10px] cursor-grab">?</span>
+                            <span>${nama}</span>
+                        </td>
+                        <td class="p-2 text-right space-x-3">
+                            <button onclick="editPengerjaan(${idx})" class="text-blue-400 font-bold hover:underline cursor-pointer">EDIT</button>
+                            <button onclick="deletePengerjaan(${idx})" class="text-red-400 font-bold hover:underline cursor-pointer">HAPUS</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            setupDragAndDrop('list-pengerjaan-config', 'pengerjaan');
+        }
+
+        window.editPengerjaan = function(index) {
+            document.getElementById('config-pengerjaan').value = jenisPengerjaan[index];
+            document.getElementById('config-pengerjaan-index').value = index;
+            document.getElementById('btn-pengerjaan-submit').innerText = "UPDATE LAYANAN";
+            document.getElementById('btn-pengerjaan-clear').classList.remove('hidden');
+        }
+
+        window.deletePengerjaan = function(index) {
+            if(confirm("APAKAH ANDA YAKIN INGIN MENGHAPUS LAYANAN " + jenisPengerjaan[index] + "?")) {
+                jenisPengerjaan.splice(index, 1);
+                set(pengerjaanRef, jenisPengerjaan);
+                clearPengerjaanForm();
+            }
         }
 
         function savePengerjaanConfig() {
@@ -756,8 +811,11 @@
             if(indexEdit !== "") {
                 const oldNama = jenisPengerjaan[indexEdit];
                 jenisPengerjaan[indexEdit] = namaKerja;
-                dataBerkas = dataBerkas.map(b => b.pengerjaan === oldNama ? {...b, pengerjaan: namaKerja} : b);
-                localStorage.setItem('berkasList', JSON.stringify(dataBerkas));
+                dataBerkas.forEach(b => {
+                    if(b.pengerjaan === oldNama) {
+                        update(ref(db, `berkas/${b.fbKey}`), { pengerjaan: namaKerja });
+                    }
+                });
                 alert("DATA LAYANAN BERHASIL DIUPDATE!");
             } else {
                 if(jenisPengerjaan.includes(namaKerja)) {
@@ -768,27 +826,8 @@
                 alert("LAYANAN BARU BERHASIL DITAMBAHKAN!");
             }
             
-            localStorage.setItem('pengerjaanList', JSON.stringify(jenisPengerjaan));
+            set(pengerjaanRef, jenisPengerjaan);
             clearPengerjaanForm();
-            initAdminForms(); 
-            renderPengerjaanConfigList();
-        }
-
-        function editPengerjaan(index) {
-            document.getElementById('config-pengerjaan').value = jenisPengerjaan[index];
-            document.getElementById('config-pengerjaan-index').value = index;
-            document.getElementById('btn-pengerjaan-submit').innerText = "UPDATE LAYANAN";
-            document.getElementById('btn-pengerjaan-clear').classList.remove('hidden');
-        }
-
-        function deletePengerjaan(index) {
-            if(confirm("APAKAH ANDA YAKIN INGIN MENGHAPUS LAYANAN " + jenisPengerjaan[index] + "?")) {
-                jenisPengerjaan.splice(index, 1);
-                localStorage.setItem('pengerjaanList', JSON.stringify(jenisPengerjaan));
-                clearPengerjaanForm();
-                initAdminForms();
-                renderPengerjaanConfigList();
-            }
         }
 
         function clearPengerjaanForm() {
@@ -798,10 +837,11 @@
             document.getElementById('btn-pengerjaan-clear').classList.add('hidden');
         }
 
-        function makeCellEditable(element, berkasId, fieldName) {
+        // Fitur Pembaruan Inline-editing (Auto-Save)
+        window.makeCellEditable = function(element, fbKey, fieldName) {
             if (element.querySelector('input') || element.querySelector('select')) return;
 
-            const oldValue = element.innerText.replace(" ✎", "").trim();
+            const oldValue = element.innerText.replace(" ?", "").trim();
             element.innerText = "";
 
             let inputElement;
@@ -848,16 +888,11 @@
                     newValue = '-';
                 }
 
-                dataBerkas = dataBerkas.map(b => {
-                    if (b.id === berkasId) {
-                        logAktivitas("[Auto-Save Inline] Perubahan " + fieldName.toUpperCase() + " berkas [" + b.nopol + "]");
-                        return { ...b, [fieldName]: newValue };
-                    }
-                    return b;
-                });
-
-                localStorage.setItem('berkasList', JSON.stringify(dataBerkas));
-                renderAdminTable();
+                const targetBerkas = dataBerkas.find(b => b.fbKey === fbKey);
+                if(targetBerkas) {
+                    logAktivitas("[Auto-Save Inline] Perubahan " + fieldName.toUpperCase() + " berkas [" + targetBerkas.nopol + "]");
+                    update(ref(db, `berkas/${fbKey}`), { [fieldName]: newValue });
+                }
             }
 
             inputElement.addEventListener('blur', saveInlineChange);
@@ -866,21 +901,22 @@
             });
         }
 
+        // Penyusunan Log Aktivitas ke Firebase
         function logAktivitas(text) {
             const time = new Date().toLocaleTimeString('id-ID');
-            dataLog.unshift("[" + time + "] " + text);
-            localStorage.setItem('logList', JSON.stringify(dataLog));
-            renderLogs();
+            push(logRef, { log: "[" + time + "] " + text });
         }
 
         function renderLogs() {
             const container = document.getElementById('log-container');
-            if(container) container.innerHTML = dataLog.map(l => `<div>${l}</div>`).join('');
+            if(container) container.innerHTML = dataLog.map(l => `<div>${l.log}</div>`).join('');
         }
 
+        // Render Antarmuka Tabel Manajemen Data
         function renderAdminTable() {
             const keyword = document.getElementById('search-admin').value.toLowerCase();
             const tbody = document.getElementById('table-admin-body');
+            if(!tbody) return;
             tbody.innerHTML = '';
 
             const filtered = dataBerkas.filter(b => 
@@ -893,19 +929,19 @@
                 tbody.innerHTML += `
                     <tr class="hover:bg-white/5 border-b border-white/5">
                         <td class="p-2 text-gray-400 font-bold">${index + 1}</td>
-                        <td class="p-2 font-medium text-blue-300 no-uppercase editable-cell" onclick="makeCellEditable(this, ${b.id}, 'mitra')">${b.mitra}</td>
-                        <td class="p-2 editable-cell" onclick="makeCellEditable(this, ${b.id}, 'pengerjaan')">${b.pengerjaan}</td>
-                        <td class="p-2 font-bold text-yellow-400 editable-cell" onclick="makeCellEditable(this, ${b.id}, 'nopol')">${b.nopol}</td>
-                        <td class="p-2 editable-cell" onclick="makeCellEditable(this, ${b.id}, 'bpkb')">${b.bpkb}</td>
+                        <td class="p-2 font-medium text-blue-300 no-uppercase editable-cell" onclick="makeCellEditable(this, '${b.fbKey}', 'mitra')">${b.mitra}</td>
+                        <td class="p-2 editable-cell" onclick="makeCellEditable(this, '${b.fbKey}', 'pengerjaan')">${b.pengerjaan}</td>
+                        <td class="p-2 font-bold text-yellow-400 editable-cell" onclick="makeCellEditable(this, '${b.fbKey}', 'nopol')">${b.nopol}</td>
+                        <td class="p-2 editable-cell" onclick="makeCellEditable(this, '${b.fbKey}', 'bpkb')">${b.bpkb}</td>
                         <td class="p-2">
-                            <select onchange="changeStatus(${b.id}, this.value)" class="border border-white/10 rounded px-1 py-0.5 bg-slate-800 text-white text-xs">
+                            <select onchange="changeStatus('${b.fbKey}', this.value)" class="border border-white/10 rounded px-1 py-0.5 bg-slate-800 text-white text-xs">
                                 <option value="On Process" ${b.status==='On Process'?'selected':''}>ON PROCESS</option>
                                 <option value="Selesai" ${b.status==='Selesai'?'selected':''}>SELESAI</option>
                             </select>
                         </td>
-                        <td class="p-2 text-gray-300 max-w-[150px] truncate editable-cell" onclick="makeCellEditable(this, ${b.id}, 'catatan')">${b.catatan || '-'}</td>
+                        <td class="p-2 text-gray-300 max-w-[150px] truncate editable-cell" onclick="makeCellEditable(this, '${b.fbKey}', 'catatan')">${b.catatan || '-'}</td>
                         <td class="p-2 text-center">
-                            <button onclick="deleteBerkas(${b.id})" class="text-red-400 hover:underline font-semibold cursor-pointer">HAPUS</button>
+                            <button onclick="deleteBerkas('${b.fbKey}')" class="text-red-400 hover:underline font-semibold cursor-pointer">HAPUS</button>
                         </td>
                     </tr>
                 `;
@@ -915,6 +951,7 @@
         function renderMitraTable() {
             const keyword = document.getElementById('search-mitra').value.toLowerCase();
             const tbody = document.getElementById('table-mitra-body');
+            if(!tbody) return;
             tbody.innerHTML = '';
 
             const filteredByMitra = dataBerkas.filter(b => b.mitra === loggedInUser);
@@ -945,6 +982,7 @@
             });
         }
 
+        // Fitur Pembuat Laporan Format PDF untuk Mitra Kontrak
         function previewMitraPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -991,6 +1029,46 @@
             const blob = doc.output('blob');
             const blobUrl = URL.createObjectURL(blob);
             window.open(blobUrl, '_blank');
+        }
+
+        // Fungsionalitas Efek Urutan Seret & Lepas (Drag & Drop Dropdown)
+        function setupDragAndDrop(containerId, type) {
+            const container = document.getElementById(containerId);
+            if(!container) return;
+            const rows = container.querySelectorAll('.draggable-row');
+
+            rows.forEach(row => {
+                row.addEventListener('dragstart', () => row.classList.add('dragging'));
+                row.addEventListener('dragend', () => {
+                    row.classList.remove('dragging');
+                    const currentRows = Array.from(container.querySelectorAll('.draggable-row'));
+                    if (type === 'mitra') {
+                        dataMitra = currentRows.map(r => dataMitra[parseInt(r.getAttribute('data-index'))]);
+                        set(mitraRef, dataMitra);
+                    } else if (type === 'pengerjaan') {
+                        jenisPengerjaan = currentRows.map(r => jenisPengerjaan[parseInt(r.getAttribute('data-index'))]);
+                        set(pengerjaanRef, jenisPengerjaan);
+                    }
+                });
+            });
+
+            container.addEventListener('dragover', e => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(container, e.clientY);
+                const dragging = container.querySelector('.dragging');
+                if (afterElement == null) container.appendChild(dragging);
+                else container.insertBefore(dragging, afterElement);
+            });
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.draggable-row:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+                else return closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
     </script>
 </body>
