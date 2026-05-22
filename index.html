@@ -7,10 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <!-- Firebase SDK via CDN -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBVzMlwshzZigPPTB6fLRqx7aNtS_-MLnE",
@@ -24,54 +23,55 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // ===== FIRESTORE HELPERS =====
-
         async function fsGetConfig(docId) {
             const snap = await getDoc(doc(db, "config", docId));
             return snap.exists() ? snap.data().value : null;
         }
-
         async function fsSetConfig(docId, value) {
             await setDoc(doc(db, "config", docId), { value });
         }
-
         async function fsGetAllBerkas() {
             const snap = await getDocs(collection(db, "berkas"));
-            return snap.docs.map(d => d.data());
+            // Filter data rusak (undefined)
+            return snap.docs.map(d => d.data()).filter(b => b && b.id && b.nopol && b.nopol !== 'undefined');
         }
-
         async function fsSetBerkas(berkas) {
             await setDoc(doc(db, "berkas", String(berkas.id)), berkas);
         }
-
         async function fsDeleteBerkas(id) {
             await deleteDoc(doc(db, "berkas", String(id)));
         }
-
         async function fsGetLog() {
             const snap = await getDoc(doc(db, "config", "logList"));
             return snap.exists() ? snap.data().value : [];
         }
-
         async function fsSaveLog(logArr) {
             await setDoc(doc(db, "config", "logList"), { value: logArr });
         }
-
-        // ===== REALTIME LISTENER =====
+        async function fsCleanUndefined() {
+            // Hapus semua dokumen berkas yang berisi undefined
+            const snap = await getDocs(collection(db, "berkas"));
+            const promises = [];
+            snap.docs.forEach(d => {
+                const data = d.data();
+                if (!data.nopol || data.nopol === 'undefined' || !data.id) {
+                    promises.push(deleteDoc(doc(db, "berkas", d.id)));
+                }
+            });
+            await Promise.all(promises);
+        }
         function listenBerkas(callback) {
             return onSnapshot(collection(db, "berkas"), (snap) => {
-                const data = snap.docs.map(d => d.data());
+                const data = snap.docs.map(d => d.data()).filter(b => b && b.id && b.nopol && b.nopol !== 'undefined');
                 callback(data);
             });
         }
-
         function listenConfig(docId, callback) {
             return onSnapshot(doc(db, "config", docId), (snap) => {
                 if (snap.exists()) callback(snap.data().value);
             });
         }
 
-        // Expose ke window agar bisa diakses dari script non-module
         window.FS = {
             getConfig: fsGetConfig,
             setConfig: fsSetConfig,
@@ -80,11 +80,11 @@
             deleteBerkas: fsDeleteBerkas,
             getLog: fsGetLog,
             saveLog: fsSaveLog,
+            cleanUndefined: fsCleanUndefined,
             listenBerkas,
             listenConfig,
         };
 
-        // Tandai Firebase sudah siap
         window.firebaseReady = true;
         window.dispatchEvent(new Event('firebaseReady'));
     </script>
@@ -134,6 +134,7 @@
         .candy-btn-green { background: linear-gradient(135deg,#34d399 0%,#059669 100%); box-shadow: 0 3px 10px rgba(5,150,105,0.35); border-radius: 50px; }
         .candy-btn-blue { background: linear-gradient(135deg,#60a5fa 0%,#2563eb 100%); box-shadow: 0 3px 10px rgba(37,99,235,0.35); border-radius: 8px; }
         .candy-btn-gray { background: linear-gradient(135deg,#9ca3af 0%,#4b5563 100%); border-radius: 8px; }
+        .candy-btn-orange { background: linear-gradient(135deg,#fb923c 0%,#ea580c 100%); box-shadow: 0 3px 10px rgba(234,88,12,0.35); border-radius: 8px; }
         .tab-active { background: rgba(255,255,255,0.2) !important; border-color: #60a5fa !important; color: #fff !important; }
         .editable-cell { cursor: pointer; position: relative; transition: background 0.2s ease; }
         .editable-cell:hover { background: rgba(255,255,255,0.08); border-radius: 4px; }
@@ -150,33 +151,25 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
 
-        /* Loading overlay */
         #loading-overlay {
             position: fixed; inset: 0; z-index: 999;
-            background: rgba(10,25,47,0.92);
+            background: rgba(10,25,47,0.95);
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
         }
         #loading-overlay.hidden { display: none !important; }
-        .spinner {
-            width: 40px; height: 40px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: #60a5fa;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
+        .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #60a5fa; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 
 <body class="bg-skyline min-h-screen font-sans text-gray-100 select-none">
 
-    <!-- Loading Overlay -->
     <div id="loading-overlay">
         <div class="spinner"></div>
         <p class="text-xs text-blue-300 font-bold tracking-widest">MENGHUBUNGKAN KE SERVER...</p>
     </div>
 
-    <!-- ===== LOGIN PAGE ===== -->
+    <!-- LOGIN PAGE -->
     <div id="login-page" class="fixed inset-0 z-50 flex flex-col justify-between p-5 bg-slate-950/10 hidden">
         <div class="flex justify-center w-full pt-2">
             <div class="login-panels">
@@ -202,7 +195,7 @@
         <div class="w-full text-center text-[10px] text-white/40 tracking-widest pb-2">CV MAJU BERSAMA &copy; 2026</div>
     </div>
 
-    <!-- ===== MITRA DASHBOARD ===== -->
+    <!-- MITRA DASHBOARD -->
     <div id="mitra-dashboard" class="fixed inset-0 flex-col bg-slate-900/40 backdrop-blur-md overflow-hidden">
         <header class="bg-white/10 px-4 py-3 flex justify-between items-center border-b border-white/10 flex-shrink-0">
             <h1 class="text-sm font-bold text-white truncate">MITRA: <span id="mitra-display-name" class="text-blue-400 no-uppercase"></span></h1>
@@ -242,7 +235,7 @@
         </main>
     </div>
 
-    <!-- ===== ADMIN DASHBOARD ===== -->
+    <!-- ADMIN DASHBOARD -->
     <div id="admin-dashboard" class="fixed inset-0 flex-col bg-slate-900/60 backdrop-blur-lg overflow-hidden">
         <header class="bg-white/10 text-white px-3 py-2 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-white/10 shadow gap-2 flex-shrink-0">
             <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -254,13 +247,10 @@
                 </div>
             </div>
             <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                <div class="bg-black/30 px-2 py-1 rounded-lg border border-white/10 flex items-center gap-1.5">
+                <!-- ONLINE BADGE: hanya tampil jika ada mitra login -->
+                <div id="online-badge-wrap" class="bg-black/30 px-2 py-1 rounded-lg border border-white/10 items-center gap-1.5 hidden">
                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0"></span>
-                    <p class="text-[9px] tracking-wider font-bold text-gray-400 whitespace-nowrap">ONLINE: <span id="active-mitra-badge" class="text-green-400 online-badge font-mono font-black">TIDAK ADA</span></p>
-                </div>
-                <div class="bg-black/30 px-2 py-1 rounded-lg border border-white/10 flex items-center gap-1">
-                    <span class="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></span>
-                    <p class="text-[9px] font-bold text-gray-400">FB: <span id="fb-status" class="text-blue-400 font-mono font-black">TERHUBUNG</span></p>
+                    <p class="text-[9px] tracking-wider font-bold text-gray-400 whitespace-nowrap">ONLINE: <span id="active-mitra-badge" class="text-green-400 online-badge font-mono font-black"></span></p>
                 </div>
                 <button onclick="handleLogout()" class="candy-btn-red text-white px-3 py-1 text-[9px] font-bold cursor-pointer flex-shrink-0">LOGOUT</button>
             </div>
@@ -317,7 +307,10 @@
         <main id="tab-semua-content" class="flex-1 p-3 max-w-7xl w-full mx-auto flex flex-col overflow-hidden space-y-2" style="height: calc(100vh - 70px); display: none;">
             <div class="candy-glass-panel p-3 rounded-xl flex flex-col flex-1 min-h-0 overflow-hidden">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2 flex-shrink-0">
-                    <h3 class="text-xs font-bold text-white">SEMUA BERKAS <span class="text-[9px] text-blue-300 normal-case font-normal block">*Klik teks untuk edit langsung (Auto-Save Firebase)</span></h3>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h3 class="text-xs font-bold text-white">SEMUA BERKAS</h3>
+                        <button onclick="bersihkanUndefined()" class="candy-btn-orange text-white px-2 py-0.5 text-[9px] font-bold cursor-pointer">BERSIHKAN DATA RUSAK</button>
+                    </div>
                     <input type="text" id="search-admin" oninput="renderAdminTable()" placeholder="CARI BERKAS..." class="px-2 py-1.5 border border-white/10 rounded-lg text-xs w-full sm:w-44 bg-slate-800 text-white font-bold uppercase">
                 </div>
                 <div class="flex-1 border border-white/5 rounded-lg min-h-0 table-scroll-x">
@@ -382,26 +375,22 @@
     </div>
 
     <script>
-        // ===== STATE =====
         let dataMitra = [];
         let jenisPengerjaan = [];
         let dataBerkas = [];
         let dataLog = [];
         let loggedInUser = null;
         let unsubBerkas = null;
-        let unsubMitra = null;
-        let unsubPengerjaan = null;
-        let unsubLog = null;
 
-        // ===== INIT — tunggu Firebase siap =====
         function onFirebaseReady() {
             loadAllConfig().then(() => {
                 document.getElementById('loading-overlay').classList.add('hidden');
                 document.getElementById('login-page').classList.remove('hidden');
                 initLoginMitraSelect();
-                updateOnlineBadge();
 
-                // Realtime listener berkas (untuk mitra yg sudah login)
+                // Bersihkan localStorage lama yg mungkin corrupt
+                localStorage.removeItem('activeMitraUser');
+
                 if (unsubBerkas) unsubBerkas();
                 unsubBerkas = window.FS.listenBerkas((data) => {
                     dataBerkas = data;
@@ -409,16 +398,16 @@
                     if (loggedInUser === 'admin') renderAdminTable();
                 });
 
-                // Realtime config
                 window.FS.listenConfig('mitraList', (val) => {
-                    dataMitra = val || [];
+                    if (!val) return;
+                    dataMitra = val;
                     initLoginMitraSelect();
                     initAdminForms();
                     renderMitraConfigList();
-                    updateOnlineBadge();
                 });
                 window.FS.listenConfig('pengerjaanList', (val) => {
-                    jenisPengerjaan = val || [];
+                    if (!val) return;
+                    jenisPengerjaan = val;
                     initAdminForms();
                     renderPengerjaanConfigList();
                 });
@@ -430,47 +419,47 @@
         }
 
         async function loadAllConfig() {
-            const [mitra, pengerjaan, log] = await Promise.all([
+            const [mitra, pengerjaan, log, berkas] = await Promise.all([
                 window.FS.getConfig('mitraList'),
                 window.FS.getConfig('pengerjaanList'),
                 window.FS.getConfig('logList'),
+                window.FS.getAllBerkas(),
             ]);
-
             dataMitra = mitra || [{ name: "SINARMAS", pass: "sinarmas123" }];
             jenisPengerjaan = pengerjaan || ["BALIK NAMA", "PERPANJANG STNK", "MUTASI KELUAR"];
             dataLog = log || [];
-
-            // Jika belum ada di Firestore, simpan default
+            dataBerkas = berkas;
             if (!mitra) await window.FS.setConfig('mitraList', dataMitra);
             if (!pengerjaan) await window.FS.setConfig('pengerjaanList', jenisPengerjaan);
-
-            dataBerkas = await window.FS.getAllBerkas();
         }
 
-        if (window.firebaseReady) {
-            onFirebaseReady();
-        } else {
-            window.addEventListener('firebaseReady', onFirebaseReady);
+        if (window.firebaseReady) onFirebaseReady();
+        else window.addEventListener('firebaseReady', onFirebaseReady);
+
+        // Bersihkan data undefined dari Firestore
+        async function bersihkanUndefined() {
+            if (!confirm('HAPUS SEMUA DATA RUSAK (UNDEFINED) DARI DATABASE?')) return;
+            await window.FS.cleanUndefined();
+            alert('DATA RUSAK BERHASIL DIHAPUS!');
         }
 
-        // ===== UI HELPERS =====
         function hideSemua() {
             document.getElementById('login-page').classList.add('hidden');
             document.getElementById('mitra-dashboard').classList.remove('show');
             document.getElementById('admin-dashboard').classList.remove('show');
         }
 
-        function updateOnlineBadge() {
-            const activeUser = localStorage.getItem('activeMitraUser');
+        // ONLINE BADGE: hanya tampil jika benar-benar ada mitra yang login dari perangkat lain
+        function updateOnlineBadge(mitraName) {
+            const wrap = document.getElementById('online-badge-wrap');
             const badge = document.getElementById('active-mitra-badge');
-            if (badge) {
-                if (activeUser && activeUser !== 'admin') {
-                    badge.innerText = activeUser.toUpperCase();
-                    badge.className = "text-green-400 online-badge font-mono font-black";
-                } else {
-                    badge.innerText = "TIDAK ADA";
-                    badge.className = "text-gray-500 online-badge font-mono font-bold";
-                }
+            if (mitraName && mitraName !== 'admin') {
+                wrap.classList.remove('hidden');
+                wrap.style.display = 'flex';
+                badge.innerText = mitraName.toUpperCase();
+            } else {
+                wrap.classList.add('hidden');
+                wrap.style.display = 'none';
             }
         }
 
@@ -479,14 +468,11 @@
                 document.getElementById('tab-' + t + '-content').style.display = 'none';
                 document.getElementById('tab-' + t + '-btn').classList.remove('tab-active');
             });
-            const content = document.getElementById('tab-' + tabName + '-content');
-            content.style.display = tabName === 'berkas' ? 'block' : 'flex';
+            document.getElementById('tab-' + tabName + '-content').style.display = tabName === 'berkas' ? 'block' : 'flex';
             document.getElementById('tab-' + tabName + '-btn').classList.add('tab-active');
-
             if (tabName === 'berkas') initAdminForms();
             if (tabName === 'semua') { renderAdminTable(); renderLogs(); }
             if (tabName === 'konfig') { renderMitraConfigList(); renderPengerjaanConfigList(); }
-            updateOnlineBadge();
         }
 
         function initLoginMitraSelect() {
@@ -502,13 +488,11 @@
             if (select.value) { passBox.classList.remove('hidden'); document.getElementById('mitra-password-input').focus(); }
         }
 
-        // ===== LOGIN =====
         function submitAdminLogin() {
             const pass = document.getElementById('admin-password-input').value.trim();
             if (pass.toLowerCase() === 'admin123') { loggedInUser = 'admin'; showDashboard('admin'); }
             else alert('PASSWORD ADMIN SALAH!');
         }
-
         document.getElementById('admin-password-input').addEventListener('keypress', e => { if (e.key === 'Enter') submitAdminLogin(); });
 
         function submitMitraLogin() {
@@ -517,11 +501,11 @@
             const mitraObj = dataMitra.find(m => m.name === selected);
             if (mitraObj && mitraObj.pass.toLowerCase() === pass.toLowerCase()) {
                 loggedInUser = selected;
-                localStorage.setItem('activeMitraUser', selected);
+                // Simpan ke Firestore siapa yang online (untuk badge admin)
+                window.FS.setConfig('activeMitra', selected);
                 showDashboard('mitra');
             } else alert('PASSWORD MITRA SALAH!');
         }
-
         document.getElementById('mitra-password-input').addEventListener('keypress', e => { if (e.key === 'Enter') submitMitraLogin(); });
 
         function showDashboard(role) {
@@ -529,16 +513,23 @@
             if (role === 'admin') {
                 document.getElementById('admin-dashboard').classList.add('show');
                 switchAdminTab('berkas');
+                initAdminForms();
+                // Dengarkan siapa yang online
+                window.FS.listenConfig('activeMitra', (val) => {
+                    updateOnlineBadge(val);
+                });
             } else {
                 document.getElementById('mitra-dashboard').classList.add('show');
                 document.getElementById('mitra-display-name').innerText = loggedInUser;
                 renderMitraTable();
             }
-            updateOnlineBadge();
         }
 
         function handleLogout() {
-            if (loggedInUser !== 'admin') localStorage.removeItem('activeMitraUser');
+            if (loggedInUser !== 'admin') {
+                // Hapus status online saat mitra logout
+                window.FS.setConfig('activeMitra', null);
+            }
             loggedInUser = null;
             document.getElementById('admin-password-input').value = '';
             document.getElementById('mitra-password-input').value = '';
@@ -547,7 +538,6 @@
             hideSemua();
             document.getElementById('login-page').classList.remove('hidden');
             initLoginMitraSelect();
-            updateOnlineBadge();
         }
 
         function initAdminForms() {
@@ -560,12 +550,10 @@
             jenisPengerjaan.forEach(j => { selectKerja.innerHTML += `<option value="${j}">${j}</option>`; });
         }
 
-        // ===== BERKAS CRUD (Firestore) =====
         async function saveBerkasManual(e) {
             if (e) e.preventDefault();
             const nopol = document.getElementById('input-nopol').value.toUpperCase().trim();
             if (!nopol) { alert("NOMOR POLISI WAJIB DIISI!"); return; }
-
             const newBerkas = {
                 id: Date.now(),
                 mitra: document.getElementById('input-mitra').value.toUpperCase(),
@@ -577,14 +565,10 @@
                 catatan: document.getElementById('input-catatan').value.toUpperCase() || '-',
                 tglKembali: document.getElementById('input-tgl-kembali').value || '-',
             };
-
-            // Cek duplikat nopol + tglAmbil
             const existing = dataBerkas.find(b => b.nopol === nopol && b.tglAmbil === newBerkas.tglAmbil);
-            if (existing) newBerkas.id = existing.id; // overwrite
-
+            if (existing) newBerkas.id = existing.id;
             await window.FS.setBerkas(newBerkas);
             logAktivitas("Menyimpan berkas [" + nopol + "] untuk " + newBerkas.mitra);
-
             alert('DATA BERKAS BERHASIL DISIMPAN!');
             document.getElementById('form-input-berkas').reset();
             document.getElementById('input-tgl-ambil').value = new Date().toISOString().split('T')[0];
@@ -594,8 +578,7 @@
         async function changeStatus(id, newStatus) {
             const b = dataBerkas.find(x => x.id === id);
             if (!b) return;
-            const updated = { ...b, status: newStatus };
-            await window.FS.setBerkas(updated);
+            await window.FS.setBerkas({ ...b, status: newStatus });
             logAktivitas("Ubah status [" + b.nopol + "] → " + newStatus.toUpperCase());
         }
 
@@ -609,18 +592,15 @@
         async function saveInlineField(berkasId, fieldName, newValue) {
             const b = dataBerkas.find(x => x.id === berkasId);
             if (!b) return;
-            const updated = { ...b, [fieldName]: newValue };
-            await window.FS.setBerkas(updated);
+            await window.FS.setBerkas({ ...b, [fieldName]: newValue });
             logAktivitas("[Auto-Save] " + fieldName.toUpperCase() + " [" + b.nopol + "] diubah");
         }
 
-        // ===== CONFIG CRUD (Firestore) =====
         async function saveMitraConfig() {
             const nameInput = document.getElementById('config-mitra-name').value.trim().toUpperCase();
             const passInput = document.getElementById('config-mitra-pass').value.trim();
             const editIndex = document.getElementById('config-mitra-edit-id').value;
             if (!nameInput) { alert("NAMA MITRA TIDAK BOLEH KOSONG!"); return; }
-
             if (editIndex !== "") {
                 const oldName = dataMitra[editIndex].name;
                 dataMitra[editIndex].name = nameInput;
@@ -635,7 +615,6 @@
                 dataMitra.push({ name: nameInput, pass: passInput || "mitra123" });
                 alert("MITRA BARU BERHASIL DITAMBAHKAN!");
             }
-
             await window.FS.setConfig('mitraList', dataMitra);
             clearMitraForm();
         }
@@ -651,7 +630,6 @@
             const namaKerja = document.getElementById('config-pengerjaan').value.trim().toUpperCase();
             const indexEdit = document.getElementById('config-pengerjaan-index').value;
             if (!namaKerja) { alert("NAMA LAYANAN TIDAK BOLEH KOSONG!"); return; }
-
             if (indexEdit !== "") {
                 const oldNama = jenisPengerjaan[indexEdit];
                 jenisPengerjaan[indexEdit] = namaKerja;
@@ -663,7 +641,6 @@
                 jenisPengerjaan.push(namaKerja);
                 alert("LAYANAN BARU BERHASIL DITAMBAHKAN!");
             }
-
             await window.FS.setConfig('pengerjaanList', jenisPengerjaan);
             clearPengerjaanForm();
         }
@@ -675,7 +652,6 @@
             clearPengerjaanForm();
         }
 
-        // ===== LOG =====
         async function logAktivitas(text) {
             const time = new Date().toLocaleTimeString('id-ID');
             dataLog.unshift("[" + time + "] " + text);
@@ -688,16 +664,15 @@
             if (container) container.innerHTML = dataLog.map(l => `<div>${l}</div>`).join('');
         }
 
-        // ===== RENDER TABLES =====
         function renderAdminTable() {
             const keyword = (document.getElementById('search-admin')?.value || '').toLowerCase();
             const tbody = document.getElementById('table-admin-body');
             if (!tbody) return;
             tbody.innerHTML = '';
             const filtered = dataBerkas.filter(b =>
-                (b.nopol || '').toLowerCase().includes(keyword) ||
-                (b.bpkb || '').toLowerCase().includes(keyword) ||
-                (b.mitra || '').toLowerCase().includes(keyword)
+                (b.nopol||'').toLowerCase().includes(keyword) ||
+                (b.bpkb||'').toLowerCase().includes(keyword) ||
+                (b.mitra||'').toLowerCase().includes(keyword)
             );
             if (filtered.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-500 text-xs">TIDAK ADA DATA</td></tr>`;
@@ -707,10 +682,10 @@
                 tbody.innerHTML += `
                     <tr class="hover:bg-white/5 border-b border-white/5">
                         <td class="p-2 text-gray-400 font-bold">${index + 1}</td>
-                        <td class="p-2 font-medium text-blue-300 no-uppercase editable-cell" onclick="makeCellEditable(this,${b.id},'mitra')">${b.mitra}</td>
-                        <td class="p-2 editable-cell" onclick="makeCellEditable(this,${b.id},'pengerjaan')">${b.pengerjaan}</td>
-                        <td class="p-2 font-bold text-yellow-400 editable-cell" onclick="makeCellEditable(this,${b.id},'nopol')">${b.nopol}</td>
-                        <td class="p-2 editable-cell" onclick="makeCellEditable(this,${b.id},'bpkb')">${b.bpkb}</td>
+                        <td class="p-2 font-medium text-blue-300 no-uppercase editable-cell" onclick="makeCellEditable(this,${b.id},'mitra')">${b.mitra||''}</td>
+                        <td class="p-2 editable-cell" onclick="makeCellEditable(this,${b.id},'pengerjaan')">${b.pengerjaan||''}</td>
+                        <td class="p-2 font-bold text-yellow-400 editable-cell" onclick="makeCellEditable(this,${b.id},'nopol')">${b.nopol||''}</td>
+                        <td class="p-2 editable-cell" onclick="makeCellEditable(this,${b.id},'bpkb')">${b.bpkb||''}</td>
                         <td class="p-2">
                             <select onchange="changeStatus(${b.id},this.value)" class="border border-white/10 rounded px-1 py-0.5 bg-slate-800 text-white text-xs">
                                 <option value="On Process" ${b.status==='On Process'?'selected':''}>ON PROCESS</option>
@@ -734,8 +709,8 @@
             document.getElementById('stat-mitra-process').innerText = filteredByMitra.filter(b => b.status === 'On Process').length;
             document.getElementById('stat-mitra-done').innerText = filteredByMitra.filter(b => b.status === 'Selesai').length;
             const finalData = filteredByMitra.filter(b =>
-                (b.nopol || '').toLowerCase().includes(keyword) ||
-                (b.bpkb || '').toLowerCase().includes(keyword)
+                (b.nopol||'').toLowerCase().includes(keyword) ||
+                (b.bpkb||'').toLowerCase().includes(keyword)
             );
             if (finalData.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500 text-xs">TIDAK ADA DATA BERKAS</td></tr>`;
@@ -745,18 +720,17 @@
                 const sc = b.status === 'Selesai' ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
                 tbody.innerHTML += `
                     <tr class="hover:bg-white/5 border-b border-white/5 whitespace-nowrap">
-                        <td class="p-2.5 font-bold text-yellow-400">${b.nopol}</td>
-                        <td class="p-2.5 text-gray-300">${b.pengerjaan}</td>
-                        <td class="p-2.5 text-gray-200">${b.bpkb}</td>
-                        <td class="p-2.5 text-gray-400">${b.tglAmbil}</td>
-                        <td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${sc}">${b.status.toUpperCase()}</span></td>
-                        <td class="p-2.5 text-xs text-gray-400">${b.catatan}</td>
-                        <td class="p-2.5 font-bold text-green-400">${b.tglKembali}</td>
+                        <td class="p-2.5 font-bold text-yellow-400">${b.nopol||''}</td>
+                        <td class="p-2.5 text-gray-300">${b.pengerjaan||''}</td>
+                        <td class="p-2.5 text-gray-200">${b.bpkb||''}</td>
+                        <td class="p-2.5 text-gray-400">${b.tglAmbil||''}</td>
+                        <td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${sc}">${(b.status||'').toUpperCase()}</span></td>
+                        <td class="p-2.5 text-xs text-gray-400">${b.catatan||'-'}</td>
+                        <td class="p-2.5 font-bold text-green-400">${b.tglKembali||'-'}</td>
                     </tr>`;
             });
         }
 
-        // ===== INLINE EDIT =====
         function makeCellEditable(element, berkasId, fieldName) {
             if (element.querySelector('input') || element.querySelector('select')) return;
             const oldValue = element.innerText.replace(" ✎", "").trim();
@@ -788,7 +762,6 @@
             }
             element.appendChild(inputElement);
             inputElement.focus();
-
             async function doSave() {
                 let newValue = inputElement.value.trim();
                 if (fieldName !== 'mitra') newValue = newValue.toUpperCase();
@@ -800,7 +773,6 @@
             inputElement.addEventListener('keypress', e => { if (e.key === 'Enter') doSave(); });
         }
 
-        // ===== CONFIG RENDER =====
         function editMitra(index) {
             document.getElementById('config-mitra-name').value = dataMitra[index].name;
             document.getElementById('config-mitra-pass').value = dataMitra[index].pass;
@@ -808,7 +780,6 @@
             document.getElementById('btn-mitra-submit').innerText = "UPDATE MITRA";
             document.getElementById('btn-mitra-clear').classList.remove('hidden');
         }
-
         function clearMitraForm() {
             document.getElementById('config-mitra-name').value = '';
             document.getElementById('config-mitra-pass').value = '';
@@ -816,14 +787,12 @@
             document.getElementById('btn-mitra-submit').innerText = "TAMBAH/UPDATE MITRA";
             document.getElementById('btn-mitra-clear').classList.add('hidden');
         }
-
         function editPengerjaan(index) {
             document.getElementById('config-pengerjaan').value = jenisPengerjaan[index];
             document.getElementById('config-pengerjaan-index').value = index;
             document.getElementById('btn-pengerjaan-submit').innerText = "UPDATE LAYANAN";
             document.getElementById('btn-pengerjaan-clear').classList.remove('hidden');
         }
-
         function clearPengerjaanForm() {
             document.getElementById('config-pengerjaan').value = '';
             document.getElementById('config-pengerjaan-index').value = '';
@@ -872,8 +841,7 @@
         function setupDragAndDrop(containerId, type) {
             const container = document.getElementById(containerId);
             if (!container) return;
-            const rows = container.querySelectorAll('.draggable-row');
-            rows.forEach(row => {
+            container.querySelectorAll('.draggable-row').forEach(row => {
                 row.addEventListener('dragstart', () => row.classList.add('dragging'));
                 row.addEventListener('dragend', async () => {
                     row.classList.remove('dragging');
@@ -892,18 +860,14 @@
             });
             container.addEventListener('dragover', e => {
                 e.preventDefault();
-                const afterEl = getDragAfterElement(container, e.clientY);
+                const after = getDragAfterElement(container, e.clientY);
                 const dragging = container.querySelector('.dragging');
-                if (dragging) {
-                    if (afterEl == null) container.appendChild(dragging);
-                    else container.insertBefore(dragging, afterEl);
-                }
+                if (dragging) { if (after == null) container.appendChild(dragging); else container.insertBefore(dragging, after); }
             });
         }
 
         function getDragAfterElement(container, y) {
-            const els = [...container.querySelectorAll('.draggable-row:not(.dragging)')];
-            return els.reduce((closest, child) => {
+            return [...container.querySelectorAll('.draggable-row:not(.dragging)')].reduce((closest, child) => {
                 const box = child.getBoundingClientRect();
                 const offset = y - box.top - box.height / 2;
                 if (offset < 0 && offset > closest.offset) return { offset, element: child };
@@ -911,7 +875,6 @@
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
-        // ===== PDF =====
         function previewMitraPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -928,14 +891,12 @@
             let y = 61;
             data.forEach(b => {
                 if (y > 270) { doc.addPage(); y = 20; }
-                doc.text(b.nopol, 14, y); doc.text(b.pengerjaan.substring(0, 18), 50, y);
-                doc.text(b.bpkb.substring(0, 18), 95, y); doc.text(b.status.toUpperCase(), 145, y);
-                doc.text(b.tglKembali, 170, y); y += 9;
+                doc.text(b.nopol||'', 14, y); doc.text((b.pengerjaan||'').substring(0,18), 50, y);
+                doc.text((b.bpkb||'').substring(0,18), 95, y); doc.text((b.status||'').toUpperCase(), 145, y);
+                doc.text(b.tglKembali||'-', 170, y); y += 9;
             });
-            doc.setFontSize(38); doc.setTextColor(220, 220, 220); doc.setFont("Helvetica", "bold");
-            for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) {
-                doc.setPage(i); doc.text("CV MAJU BERSAMA", 38, 150, { angle: 45 });
-            }
+            doc.setFontSize(38); doc.setTextColor(220,220,220); doc.setFont("Helvetica","bold");
+            for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) { doc.setPage(i); doc.text("CV MAJU BERSAMA", 38, 150, { angle: 45 }); }
             window.open(URL.createObjectURL(doc.output('blob')), '_blank');
         }
     </script>
