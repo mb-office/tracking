@@ -1,1161 +1,959 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CV MAJU BERSAMA - SISTEM PELACAKAN BERKAS</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBVzMlwshzZigPPTB6fLRqx7aNtS_-MLnE",
-            authDomain: "trackingdokumen-623fd.firebaseapp.com",
-            projectId: "trackingdokumen-623fd",
-            storageBucket: "trackingdokumen-623fd.firebasestorage.app",
-            messagingSenderId: "1070776413205",
-            appId: "1:1070776413205:web:c5df54217830e1b861721c"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        function isValid(b) {
-            if (!b || !b.id) return false;
-            if (!b.nopol || b.nopol==='undefined' || b.nopol.trim()==='') return false;
-            if (!b.mitra || b.mitra==='undefined') return false;
-            return true;
-        }
-
-        window.FS = {
-            getConfig: async (id) => { const s=await getDoc(doc(db,"config",id)); return s.exists()?s.data().value:null; },
-            setConfig: async (id,val) => { await setDoc(doc(db,"config",id),{value:val}); },
-            getAllBerkas: async () => { const s=await getDocs(collection(db,"berkas")); return s.docs.map(d=>d.data()).filter(isValid); },
-            setBerkas: async (b) => { await setDoc(doc(db,"berkas",String(b.id)),b); },
-            deleteBerkas: async (id) => { await deleteDoc(doc(db,"berkas",String(id))); },
-            saveLog: async (arr) => { await setDoc(doc(db,"config","logList"),{value:arr}); },
-            cleanBad: async () => {
-                const s=await getDocs(collection(db,"berkas"));
-                const p=[];
-                s.docs.forEach(d=>{ if(!isValid(d.data())) p.push(deleteDoc(doc(db,"berkas",d.id))); });
-                await Promise.all(p); return p.length;
-            },
-            listenBerkas: (cb) => onSnapshot(collection(db,"berkas"),(s)=>cb(s.docs.map(d=>d.data()).filter(isValid))),
-            listenConfig: (id,cb) => onSnapshot(doc(db,"config",id),(s)=>{ if(s.exists()) cb(s.data().value); }),
-        };
-
-        window.firebaseReady = true;
-        window.dispatchEvent(new Event('firebaseReady'));
-    </script>
-
-    <style>
-        *{box-sizing:border-box;}
-        html,body{height:100%;margin:0;padding:0;}
-        body{font-family:sans-serif;color:#f1f5f9;text-transform:uppercase;}
-        select,textarea,table,button,h1,h2,h3,p,label,th,td{text-transform:uppercase;}
-        .no-upper,#log-container,input::placeholder,.iup{text-transform:none!important;}
-
-        .bg-app{
-            background:linear-gradient(135deg,rgba(10,25,47,0.93) 0%,rgba(16,40,75,0.91) 100%),
-            url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1920&auto=format&fit=crop');
-            background-size:cover;background-position:center;background-attachment:fixed;
-        }
-
-        /* pages */
-        #pg-login{display:flex;}
-        #pg-admin,#pg-mitra,#pg-petugas{display:none;}
-        #pg-login.hidden{display:none!important;}
-        #pg-admin.show,#pg-mitra.show,#pg-petugas.show{display:flex!important;}
-
-        /* glass */
-        .glass{background:rgba(255,255,255,0.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.17);box-shadow:0 8px 32px rgba(0,0,0,0.35);}
-        .gi{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.22);color:#fff;backdrop-filter:blur(4px);transition:all .3s;}
-        .gi::placeholder{color:rgba(255,255,255,0.38);text-transform:none;}
-        .gi:focus{background:rgba(255,255,255,0.17);border-color:#60a5fa;box-shadow:0 0 10px rgba(96,165,250,0.45);outline:none;}
-
-        /* buttons */
-        .btn{display:inline-flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer;border:none;transition:all .2s;}
-        .btn-blue{background:linear-gradient(135deg,#60a5fa,#2563eb);border-radius:8px;box-shadow:0 3px 10px rgba(37,99,235,.35);}
-        .btn-green{background:linear-gradient(135deg,#34d399,#059669);border-radius:50px;box-shadow:0 3px 10px rgba(5,150,105,.35);}
-        .btn-red{background:linear-gradient(135deg,#f87171,#dc2626);border-radius:50px;box-shadow:0 3px 10px rgba(220,38,38,.35);}
-        .btn-gray{background:linear-gradient(135deg,#9ca3af,#4b5563);border-radius:8px;}
-        .btn-orange{background:linear-gradient(135deg,#fb923c,#ea580c);border-radius:8px;}
-        .btn-yellow{background:linear-gradient(135deg,#fbbf24,#d97706);border-radius:8px;}
-        .btn-purple{background:linear-gradient(135deg,#a78bfa,#7c3aed);border-radius:8px;}
-        .btn-teal{background:linear-gradient(135deg,#2dd4bf,#0d9488);border-radius:8px;}
-        .btn-glass{background:linear-gradient(135deg,rgba(59,130,246,.42),rgba(29,78,216,.52));border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(4px);}
-        .btn-glass:hover{background:linear-gradient(135deg,rgba(59,130,246,.62),rgba(29,78,216,.72));transform:translateY(-1px);}
-
-        /* tab */
-        .tab-btn{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#9ca3af;transition:all .2s;cursor:pointer;}
-        .tab-btn.active{background:rgba(255,255,255,0.2)!important;border-color:#60a5fa!important;color:#fff!important;}
-
-        /* table */
-        .tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-        .tscroll::-webkit-scrollbar{height:4px;}
-        .tscroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:4px;}
-        .ec{cursor:pointer;transition:background .2s;}
-        .ec:hover{background:rgba(255,255,255,.08);border-radius:4px;}
-        .ec::after{content:" ✎";font-size:9px;opacity:0;color:#60a5fa;transition:opacity .2s;}
-        .ec:hover::after{opacity:1;}
-        .dc{cursor:pointer;transition:background .2s;}
-        .dc:hover{background:rgba(255,255,255,.08);border-radius:4px;}
-        .dc::after{content:" 📅";font-size:9px;opacity:0;transition:opacity .2s;}
-        .dc:hover::after{opacity:1;}
-
-        /* drag col */
-        .drag-col-th{cursor:grab;user-select:none;}
-        .drag-col-th:active{cursor:grabbing;}
-        .drag-col-th.over{border-left:2px solid #60a5fa;}
-
-        /* drag row */
-        .drag-row{cursor:grab;user-select:none;}
-        .drag-row:active{cursor:grabbing;}
-        .drag-row.dragging{opacity:.4;background:rgba(59,130,246,.2)!important;}
-
-        /* modal */
-        .modal-bg{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px;}
-        .modal-bg.hidden{display:none!important;}
-
-        /* loading */
-        #loading{position:fixed;inset:0;z-index:999;background:rgba(10,25,47,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
-        #loading.hidden{display:none!important;}
-        .spin{width:42px;height:42px;border:3px solid rgba(255,255,255,.1);border-top-color:#60a5fa;border-radius:50%;animation:sp .8s linear infinite;}
-        @keyframes sp{to{transform:rotate(360deg);}}
-
-        ::-webkit-scrollbar{width:4px;height:4px;}
-        ::-webkit-scrollbar-track{background:transparent;}
-        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:4px;}
-
-        /* input form style */
-        .fi{width:100%;padding:6px 8px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:11px;background:#1e293b;color:#fff;}
-        .fi:focus{border-color:#60a5fa;outline:none;}
-        .lbl{display:block;font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:2px;}
-
-        /* status badge */
-        .badge-process{background:rgba(59,130,246,.2);color:#93c5fd;border:1px solid rgba(59,130,246,.3);}
-        .badge-done{background:rgba(16,185,129,.2);color:#6ee7b7;border:1px solid rgba(16,185,129,.3);}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CV MAJU BERSAMA - SISTEM PELACAKAN BERKAS</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const FC={
+  apiKey:"AIzaSyBVzMlwshzZigPPTB6fLRqx7aNtS_-MLnE",
+  authDomain:"trackingdokumen-623fd.firebaseapp.com",
+  projectId:"trackingdokumen-623fd",
+  storageBucket:"trackingdokumen-623fd.firebasestorage.app",
+  messagingSenderId:"1070776413205",
+  appId:"1:1070776413205:web:c5df54217830e1b861721c"
+};
+const app=initializeApp(FC);
+const db=getFirestore(app);
+function ok(b){
+  if(!b||!b.id)return false;
+  if(!b.nopol||b.nopol==='undefined'||b.nopol.trim()==='')return false;
+  if(!b.mitra||b.mitra==='undefined')return false;
+  return true;
+}
+window.FS={
+  gc:async(id)=>{const s=await getDoc(doc(db,"config",id));return s.exists()?s.data().value:null;},
+  sc:async(id,v)=>{await setDoc(doc(db,"config",id),{value:v});},
+  gab:async()=>{const s=await getDocs(collection(db,"berkas"));return s.docs.map(d=>d.data()).filter(ok);},
+  sb:async(b)=>{await setDoc(doc(db,"berkas",String(b.id)),b);},
+  db2:async(id)=>{await deleteDoc(doc(db,"berkas",String(id)));},
+  sl:async(arr)=>{await setDoc(doc(db,"config","logList"),{value:arr});},
+  listen:(col,id,cb)=>{
+    if(id)return onSnapshot(doc(db,col,id),(s)=>{if(s.exists())cb(s.data().value);});
+    return onSnapshot(collection(db,col),(s)=>{cb(s.docs.map(d=>d.data()).filter(ok));});
+  }
+};
+window.fbReady=true;
+window.dispatchEvent(new Event('fbReady'));
+</script>
+<style>
+*{box-sizing:border-box;}
+body,select,textarea,table,button,h1,h2,h3,p{text-transform:uppercase;}
+.lc,#logc,input::placeholder,.ieinp{text-transform:none!important;}
+.bsky{
+  background:linear-gradient(135deg,rgba(10,25,47,.93),rgba(16,40,75,.91)),
+  url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1920&auto=format&fit=crop');
+  background-size:cover;background-position:center;background-attachment:fixed;
+}
+#pgl{display:flex;}#pga,#pgm,#pgp{display:none;}
+#pgl.h{display:none!important;}
+#pga.s,#pgm.s,#pgp.s{display:flex!important;}
+.gp{background:rgba(255,255,255,.10);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 32px rgba(0,0,0,.37);}
+.gi{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#fff;backdrop-filter:blur(4px);transition:all .3s;}
+.gi::placeholder{color:rgba(255,255,255,.4);}
+.gi:focus{background:rgba(255,255,255,.18);border-color:#60a5fa;box-shadow:0 0 10px rgba(96,165,250,.5);outline:none;}
+.gbtn{background:linear-gradient(135deg,rgba(59,130,246,.45),rgba(29,78,216,.55));border:1px solid rgba(255,255,255,.3);backdrop-filter:blur(4px);transition:all .2s;}
+.gbtn:hover{background:linear-gradient(135deg,rgba(59,130,246,.65),rgba(29,78,216,.75));transform:translateY(-1px);}
+.br{background:linear-gradient(135deg,#f87171,#dc2626);border-radius:50px;}
+.bg2{background:linear-gradient(135deg,#34d399,#059669);border-radius:50px;}
+.bb{background:linear-gradient(135deg,#60a5fa,#2563eb);border-radius:8px;}
+.bgr{background:linear-gradient(135deg,#9ca3af,#4b5563);border-radius:8px;}
+.bo{background:linear-gradient(135deg,#fb923c,#ea580c);border-radius:8px;}
+.by{background:linear-gradient(135deg,#fbbf24,#d97706);border-radius:8px;}
+.bpu{background:linear-gradient(135deg,#a78bfa,#7c3aed);border-radius:8px;}
+.bpi{background:linear-gradient(135deg,#f472b6,#db2777);border-radius:8px;}
+.btn-teal{background:linear-gradient(135deg,#2dd4bf,#0d9488);border-radius:8px;}
+.btn-indigo{background:linear-gradient(135deg,#818cf8,#4338ca);border-radius:8px;}
+.ta{background:rgba(255,255,255,.2)!important;border-color:#60a5fa!important;color:#fff!important;}
+.ec{cursor:pointer;transition:background .2s;}
+.ec:hover{background:rgba(255,255,255,.08);border-radius:4px;}
+.ec::after{content:" ✎";font-size:9px;opacity:0;color:#60a5fa;transition:opacity .2s;}
+.ec:hover::after{opacity:1;}
+.dc{cursor:pointer;transition:background .2s;}
+.dc:hover{background:rgba(255,255,255,.08);border-radius:4px;}
+.dc::after{content:" 📅";font-size:9px;opacity:0;transition:opacity .2s;}
+.dc:hover::after{opacity:1;}
+.tx{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:4px;}
+#ov{position:fixed;inset:0;z-index:999;background:rgba(10,25,47,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+#ov.h{display:none!important;}
+.sp{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px;}
+#modal.h{display:none!important;}
+th[draggable]{cursor:grab;}
+th[draggable].dov{background:rgba(96,165,250,.25)!important;}
+/* Filter panel */
+#filter-panel{display:none;}
+#filter-panel.open{display:flex;}
+</style>
 </head>
+<body class="bsky min-h-screen font-sans text-gray-100 select-none">
 
-<body class="bg-app min-h-screen select-none">
+<div id="ov"><div class="sp"></div><p class="text-xs text-blue-300 font-bold tracking-widest">MENGHUBUNGKAN KE SERVER...</p></div>
 
-<!-- LOADING -->
-<div id="loading">
-    <div class="spin"></div>
-    <p style="font-size:11px;color:#93c5fd;font-weight:700;letter-spacing:.1em;">MENGHUBUNGKAN KE SERVER...</p>
+<!-- MODAL -->
+<div id="modal" class="h">
+  <div class="gp p-5 rounded-2xl w-full max-w-sm" id="modal-body"></div>
 </div>
 
-<!-- ============================================================
-     LOGIN PAGE
-============================================================ -->
-<div id="pg-login" class="fixed inset-0 z-50 flex flex-col justify-between p-4 hidden">
+<!-- ===== LOGIN ===== -->
+<div id="pgl" class="fixed inset-0 z-50 flex flex-col justify-between p-5 h">
+  <div class="flex justify-center w-full pt-6">
+    <div class="gp p-5 rounded-2xl w-full max-w-xs space-y-3">
+      <p class="text-[11px] font-black tracking-wider text-blue-300 text-center">LOGIN SISTEM</p>
+      <div>
+        <label class="block text-[10px] text-gray-400 font-bold mb-1">USERNAME</label>
+        <input type="text" id="l-u" placeholder="Login" class="w-full gi px-3 py-2 rounded-xl text-xs lc">
+      </div>
+      <div>
+        <label class="block text-[10px] text-gray-400 font-bold mb-1">PASSWORD</label>
+        <input type="password" id="l-p" placeholder="Password..." class="w-full gi px-3 py-2 rounded-xl text-xs lc">
+      </div>
+      <button onclick="doLogin()" class="w-full gbtn text-white py-2 rounded-xl font-bold text-xs cursor-pointer">MASUK</button>
+    </div>
+  </div>
+  <div class="text-center w-full py-4">
+    <h1 class="text-3xl sm:text-5xl font-black tracking-widest text-white drop-shadow-lg">MAJU BERSAMA</h1>
+    <p class="text-xs sm:text-sm tracking-widest text-blue-300 font-bold mt-2">SISTEM PELACAKAN DATA BERKAS KEPENGURUSAN</p>
+  </div>
+  <div class="w-full text-center text-[10px] text-white/40 tracking-widest pb-2">CV MAJU BERSAMA &copy; 2026</div>
+</div>
 
-    <!-- Header judul -->
-    <div class="text-center pt-8">
-        <h1 style="font-size:clamp(1.5rem,5vw,3rem);font-weight:900;letter-spacing:.15em;color:#fff;text-shadow:0 2px 20px rgba(0,0,0,.5);">MAJU BERSAMA
-        PARTNER PORTAL</h1>
-        <p style="font-size:11px;letter-spacing:.12em;color:#93c5fd;font-weight:700;margin-top:6px;"> CONNECTING BUSINESS, TRACKING PROGRESS</p>
+<!-- ===== MITRA ===== -->
+<div id="pgm" class="fixed inset-0 flex-col bg-slate-900/40 backdrop-blur-md overflow-hidden">
+  <header class="bg-white/10 px-4 py-3 flex justify-between items-center border-b border-white/10 flex-shrink-0">
+    <h1 class="text-sm font-bold text-white truncate">MITRA: <span id="mn" class="text-blue-400 lc"></span></h1>
+    <button onclick="doLogout()" class="br text-white px-4 py-1.5 text-xs font-bold cursor-pointer ml-2">LOGOUT</button>
+  </header>
+  <main class="flex-1 p-3 max-w-7xl w-full mx-auto flex flex-col overflow-hidden space-y-2" style="height:calc(100vh - 54px);">
+    <div class="bg-white/10 p-2.5 rounded-xl border border-white/10 flex-shrink-0">
+      <input type="text" id="ms" oninput="renderM()" placeholder="CARI NO. POLISI ATAU NAMA BPKB..." class="w-full px-3 py-2 gi rounded-xl text-xs uppercase">
+    </div>
+    <div class="flex-1 bg-white/5 rounded-xl border border-white/10 min-h-0 tx">
+      <table class="w-full text-left border-collapse text-xs" style="min-width:680px;">
+        <thead class="sticky top-0 bg-slate-900 z-10">
+          <tr class="bg-white/10 border-b border-white/10 text-white">
+            <th class="p-2.5">#</th><th class="p-2.5">NO. POLISI</th><th class="p-2.5">JENIS PENGERJAAN</th>
+            <th class="p-2.5">NAMA BPKB</th><th class="p-2.5">TGL AMBIL</th><th class="p-2.5">STATUS</th>
+            <th class="p-2.5">CATATAN</th><th class="p-2.5">TGL KEMBALI</th>
+          </tr>
+        </thead>
+        <tbody id="tbm" class="divide-y divide-white/5 text-gray-200"></tbody>
+      </table>
+    </div>
+    <div class="grid grid-cols-3 gap-2 flex-shrink-0">
+      <div class="bg-white/10 py-2 px-3 rounded-xl border-l-4 border-blue-500 flex justify-between items-center">
+        <p class="text-[9px] text-blue-300 font-bold">ON PROCESS</p><p id="mpc" class="text-sm font-black">0</p>
+      </div>
+      <div class="bg-white/10 py-2 px-3 rounded-xl border-l-4 border-green-500 flex justify-between items-center">
+        <p class="text-[9px] text-green-300 font-bold">SELESAI</p><p id="mdn" class="text-sm font-black">0</p>
+      </div>
+      <button onclick="cetakPDF('mitra')" class="bg2 text-white text-[10px] font-bold h-[38px] flex items-center justify-center w-full cursor-pointer">CETAK PDF</button>
+    </div>
+  </main>
+</div>
+
+<!-- ===== PETUGAS ===== -->
+<div id="pgp" class="fixed inset-0 flex-col bg-slate-900/40 backdrop-blur-md overflow-hidden">
+  <header class="bg-white/10 px-4 py-3 flex justify-between items-center border-b border-white/10 flex-shrink-0">
+    <h1 class="text-sm font-bold text-white truncate">PETUGAS: <span id="pn" class="text-pink-400 lc"></span></h1>
+    <button onclick="doLogout()" class="br text-white px-4 py-1.5 text-xs font-bold cursor-pointer ml-2">LOGOUT</button>
+  </header>
+  <main class="flex-1 p-3 max-w-7xl w-full mx-auto flex flex-col overflow-hidden space-y-2" style="height:calc(100vh - 54px);">
+    <div class="bg-white/10 p-2.5 rounded-xl border border-white/10 flex-shrink-0">
+      <input type="text" id="ps2" oninput="renderP()" placeholder="CARI NO. POLISI ATAU NAMA BPKB..." class="w-full px-3 py-2 gi rounded-xl text-xs uppercase">
+    </div>
+    <div class="flex-1 bg-white/5 rounded-xl border border-white/10 min-h-0 tx">
+      <table class="w-full text-left border-collapse text-xs" style="min-width:700px;">
+        <thead class="sticky top-0 bg-slate-900 z-10">
+          <tr class="bg-white/10 border-b border-white/10 text-white">
+            <th class="p-2.5">#</th><th class="p-2.5">NO. POLISI</th><th class="p-2.5">JENIS PENGERJAAN</th>
+            <th class="p-2.5">NAMA BPKB</th><th class="p-2.5">TGL PENYERAHAN</th><th class="p-2.5">STATUS</th>
+            <th class="p-2.5">MITRA</th><th class="p-2.5">CATATAN MITRA</th>
+          </tr>
+        </thead>
+        <tbody id="tbp" class="divide-y divide-white/5 text-gray-200"></tbody>
+      </table>
+    </div>
+    <div class="grid grid-cols-2 gap-2 flex-shrink-0">
+      <div class="bg-white/10 py-2 px-3 rounded-xl border-l-4 border-blue-500 flex justify-between items-center">
+        <p class="text-[9px] text-blue-300 font-bold">ON PROCESS</p><p id="ppc" class="text-sm font-black">0</p>
+      </div>
+      <div class="bg-white/10 py-2 px-3 rounded-xl border-l-4 border-green-500 flex justify-between items-center">
+        <p class="text-[9px] text-green-300 font-bold">SELESAI</p><p id="pdn" class="text-sm font-black">0</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===== ADMIN ===== -->
+<div id="pga" class="fixed inset-0 flex-col bg-slate-900/60 backdrop-blur-lg overflow-hidden">
+  <header class="bg-white/10 text-white px-3 py-2 flex justify-between items-center border-b border-white/10 flex-shrink-0 gap-2">
+    <div class="flex flex-wrap items-center gap-1.5">
+      <span class="text-xs font-black tracking-widest flex-shrink-0">ADMIN</span>
+      <button id="tbb" onclick="sw('b')" class="px-2 py-1 text-[9px] font-bold rounded-md border border-white/10 bg-white/5 text-gray-300 cursor-pointer ta">INPUT</button>
+      <button id="tsb" onclick="sw('s')" class="px-2 py-1 text-[9px] font-bold rounded-md border border-white/10 bg-white/5 text-gray-300 cursor-pointer">SEMUA BERKAS</button>
+      <button id="tkb" onclick="sw('k')" class="px-2 py-1 text-[9px] font-bold rounded-md border border-white/10 bg-white/5 text-gray-300 cursor-pointer">KONFIGURASI</button>
+    </div>
+    <!-- Tombol aksi tab semua berkas (tersembunyi di tab lain) -->
+    <div id="hdr-semua" class="hidden items-center gap-1.5">
+      <button onclick="toggleFilter()" class="btn-indigo text-white px-2 py-1 text-[9px] font-bold cursor-pointer">🔍 FILTER</button>
+      <button onclick="previewPDFAdmin()" class="bo text-white px-2 py-1 text-[9px] font-bold cursor-pointer">📄 PDF</button>
+      <button onclick="exportExcel()" class="btn-teal text-white px-2 py-1 text-[9px] font-bold cursor-pointer">📊 EXCEL</button>
+    </div>
+    <button onclick="doLogout()" class="br text-white px-3 py-1 text-[9px] font-bold cursor-pointer flex-shrink-0">LOGOUT</button>
+  </header>
+
+  <!-- TAB INPUT -->
+  <main id="tab-b" class="flex-1 p-3 w-full mx-auto overflow-y-auto" style="height:calc(100vh - 52px);display:none;">
+    <div class="gp p-4 rounded-xl max-w-lg mx-auto">
+      <h3 class="text-xs font-bold text-blue-300 mb-3 border-b pb-1.5 border-white/10">INPUT DATA BERKAS</h3>
+      <form id="frm" onsubmit="saveBerkas(event)" class="space-y-2">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] text-gray-300 font-semibold mb-0.5">NAMA MITRA</label>
+            <select id="im" required class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white lc"></select>
+          </div>
+          <div>
+            <label class="block text-[10px] text-gray-300 font-semibold mb-0.5">NAMA PETUGAS</label>
+            <select id="ipt" class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white lc">
+              <option value="">-- PILIH PETUGAS --</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] text-gray-300 font-semibold mb-0.5">JENIS PENGERJAAN</label>
+          <select id="ik" required onchange="onKerja()" class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white"></select>
+        </div>
+        <!-- Mutasi -->
+        <div id="fmut" class="hidden space-y-2 bg-white/5 p-3 rounded-lg border border-purple-500/30">
+          <p class="text-[9px] font-black text-purple-300">DATA MUTASI</p>
+          <input type="text" id="imn" placeholder="MUTASI KE ATAS NAMA..." class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white uppercase">
+          <input type="text" id="ima" placeholder="MUTASI KE ALAMAT..." class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white uppercase">
+          <input type="text" id="imp" placeholder="NO. POLISI BARU SETELAH MUTASI..." class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white uppercase">
+        </div>
+        <!-- BBN -->
+        <div id="fbbn" class="hidden space-y-2 bg-white/5 p-3 rounded-lg border border-yellow-500/30">
+          <p class="text-[9px] font-black text-yellow-300">DATA BBN</p>
+          <input type="text" id="ibn" placeholder="BBN KE ATAS NAMA..." class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white uppercase">
+          <input type="text" id="iba" placeholder="BBN KE ALAMAT..." class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white uppercase">
+          <input type="text" id="ibp" placeholder="NO. POLISI BARU SETELAH BBN..." class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white uppercase">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] text-gray-300 font-semibold mb-0.5">NOMOR POLISI</label>
+            <input type="text" id="inp" required placeholder="BL 1234 AB" class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white font-bold uppercase">
+          </div>
+          <div>
+            <label class="block text-[10px] text-gray-300 font-semibold mb-0.5">NAMA PADA BPKB</label>
+            <input type="text" id="ibk" required class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white uppercase">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] text-gray-300 font-semibold mb-0.5">TGL AMBIL DR MITRA</label>
+            <input type="date" id="ita" class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] text-gray-300 font-semibold mb-0.5">TGL SERAH KE PETUGAS</label>
+            <input type="date" id="its" class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] text-gray-300 font-semibold mb-0.5">STATUS</label>
+          <select id="ist" onchange="onStatus()" class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white">
+            <option value="On Process">ON PROCESS</option>
+            <option value="Selesai">SELESAI</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] text-gray-300 font-semibold mb-0.5">CATATAN MITRA</label>
+            <textarea id="ict" rows="2" class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white uppercase"></textarea>
+          </div>
+          <div>
+            <label class="block text-[10px] text-gray-300 font-semibold mb-0.5">CATATAN PETUGAS</label>
+            <textarea id="icp" rows="2" class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white uppercase"></textarea>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] text-gray-300 font-semibold mb-0.5">TGL KEMBALI KE MITRA</label>
+          <input type="date" id="itk" class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white">
+        </div>
+        <button type="submit" class="w-full bb text-white py-2 font-bold text-xs cursor-pointer tracking-wider">SAVE BERKAS</button>
+      </form>
+    </div>
+  </main>
+
+  <!-- TAB SEMUA BERKAS -->
+  <main id="tab-s" class="flex-1 p-3 max-w-full w-full mx-auto flex flex-col overflow-hidden space-y-2" style="height:calc(100vh - 52px);display:none;">
+    <!-- Filter Panel -->
+    <div id="filter-panel" class="gp p-3 rounded-xl flex-shrink-0 flex-col gap-2">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div>
+          <label class="block text-[9px] text-gray-400 font-bold mb-0.5">MITRA</label>
+          <select id="f-mitra" onchange="renderA()" class="w-full px-2 py-1 border border-white/10 rounded-lg text-xs bg-slate-800 text-white lc">
+            <option value="">SEMUA</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[9px] text-gray-400 font-bold mb-0.5">PETUGAS</label>
+          <select id="f-ptgs" onchange="renderA()" class="w-full px-2 py-1 border border-white/10 rounded-lg text-xs bg-slate-800 text-white lc">
+            <option value="">SEMUA</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[9px] text-gray-400 font-bold mb-0.5">STATUS</label>
+          <select id="f-status" onchange="renderA()" class="w-full px-2 py-1 border border-white/10 rounded-lg text-xs bg-slate-800 text-white">
+            <option value="">SEMUA</option>
+            <option value="On Process">ON PROCESS</option>
+            <option value="Selesai">SELESAI</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[9px] text-gray-400 font-bold mb-0.5">PENGERJAAN</label>
+          <select id="f-kerja" onchange="renderA()" class="w-full px-2 py-1 border border-white/10 rounded-lg text-xs bg-slate-800 text-white">
+            <option value="">SEMUA</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div>
+          <label class="block text-[9px] text-gray-400 font-bold mb-0.5">TGL AMBIL DARI</label>
+          <input type="date" id="f-tgl1" onchange="renderA()" class="w-full px-2 py-1 border border-white/10 rounded-lg text-xs bg-slate-800 text-white">
+        </div>
+        <div>
+          <label class="block text-[9px] text-gray-400 font-bold mb-0.5">TGL AMBIL SAMPAI</label>
+          <input type="date" id="f-tgl2" onchange="renderA()" class="w-full px-2 py-1 border border-white/10 rounded-lg text-xs bg-slate-800 text-white">
+        </div>
+        <div class="flex items-end">
+          <button onclick="resetFilter()" class="w-full bo text-white py-1 text-[9px] font-bold cursor-pointer">RESET FILTER</button>
+        </div>
+        <div class="flex items-end">
+          <span id="f-count" class="text-[9px] text-gray-400 font-bold">0 DATA TAMPIL</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Form login -->
-    <div class="flex justify-center items-center flex-1">
-        <div class="glass p-6 rounded-2xl w-full" style="max-width:360px;">
-            <p style="font-size:10px;font-weight:900;letter-spacing:.1em;color:#93c5fd;margin-bottom:12px;">🔐 MASUK KE SISTEM</p>
-
-            <div style="margin-bottom:10px;">
-                <label class="lbl">USERNAME ( LOGIN ID )</label>
-                <input type="text" id="login-user" placeholder="Masukkan username..." oninput="this.value=this.value.toUpperCase()" class="gi w-full px-3 py-2 rounded-xl" style="font-size:12px;font-weight:700;">
-            </div>
-            <div style="margin-bottom:14px;">
-                <label class="lbl">PASSWORD</label>
-                <input type="password" id="login-pass" placeholder="Masukkan password..." class="gi w-full px-3 py-2 rounded-xl no-upper" style="font-size:12px;">
-            </div>
-            <button onclick="doLogin()" class="btn btn-glass text-white w-full py-2 rounded-xl" style="font-size:12px;font-weight:700;">MASUK</button>
-            <div id="login-err" style="font-size:10px;color:#f87171;text-align:center;margin-top:8px;display:none;">USERNAME ATAU PASSWORD SALAH!</div>
+    <div class="gp p-3 rounded-xl flex flex-col flex-1 min-h-0 overflow-hidden">
+      <div class="flex justify-between items-center mb-2 gap-2 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <h3 class="text-xs font-bold text-white">SEMUA BERKAS</h3>
+          <span class="text-[8px] text-blue-300 normal-case hidden sm:inline">*Klik teks=edit | Geser header=ubah urutan</span>
         </div>
+        <input type="text" id="as" oninput="renderA()" placeholder="CARI..." class="px-2 py-1.5 border border-white/10 rounded-lg text-xs w-40 bg-slate-800 text-white uppercase">
+      </div>
+      <div class="flex-1 border border-white/5 rounded-lg min-h-0 tx">
+        <table class="w-full text-left text-xs border-collapse" id="atbl" style="min-width:1150px;">
+          <thead class="sticky top-0 bg-slate-900 z-10" id="ahead"></thead>
+          <tbody id="tba" class="divide-y divide-white/5 text-gray-200"></tbody>
+        </table>
+      </div>
     </div>
 
-    <div style="text-align:center;font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.1em;padding-bottom:8px;">CV MAJU BERSAMA &copy; 2026</div>
-</div>
+    <!-- Log Aktivitas Login -->
+    <div class="gp p-3 rounded-xl flex-shrink-0">
+      <h3 class="text-[9px] font-black text-gray-400 tracking-wider mb-1">LOG AKTIVITAS LOGIN</h3>
+      <div id="logc" class="bg-black/30 p-2 rounded-lg text-[10px] h-14 overflow-y-auto font-mono text-blue-300 border border-white/5 lc"></div>
+    </div>
+  </main>
 
-<!-- ============================================================
-     MITRA DASHBOARD
-============================================================ -->
-<div id="pg-mitra" class="fixed inset-0 flex-col overflow-hidden" style="background:rgba(15,23,42,.5);backdrop-filter:blur(12px);">
-    <header class="flex justify-between items-center px-4 py-3 border-b" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.1);flex-shrink:0;">
-        <div>
-            <p style="font-size:10px;color:#93c5fd;font-weight:700;">MITRA</p>
-            <p id="mitra-name-hdr" style="font-size:14px;font-weight:900;color:#fff;" class="no-upper"></p>
+  <!-- TAB KONFIGURASI -->
+  <main id="tab-k" class="flex-1 p-3 max-w-3xl w-full mx-auto flex flex-col overflow-y-auto space-y-3" style="height:calc(100vh - 52px);display:none;">
+    <!-- Password Admin -->
+    <div class="gp p-4 rounded-xl border border-yellow-500/40">
+      <h3 class="text-xs font-bold text-yellow-300 mb-3">🔑 UBAH PASSWORD ADMIN</h3>
+      <div class="space-y-2">
+        <input type="password" id="ao" placeholder="Password saat ini..." class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white lc">
+        <input type="password" id="an" placeholder="Password baru (min 6 karakter)..." class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white lc">
+        <input type="password" id="ac" placeholder="Konfirmasi password baru..." class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white lc">
+        <button onclick="changePass()" class="w-full by text-white py-1.5 text-xs font-bold cursor-pointer">SIMPAN PASSWORD BARU</button>
+      </div>
+    </div>
+    <!-- Mitra -->
+    <div class="gp p-4 rounded-xl">
+      <h3 class="text-xs font-bold text-blue-300 mb-2">MANAJEMEN DATA MITRA</h3>
+      <div class="space-y-2">
+        <input type="hidden" id="me2">
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" id="mna" oninput="this.value=this.value.toUpperCase()" placeholder="NAMA MITRA..." class="px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white uppercase">
+          <input type="password" id="mpa" placeholder="Password..." class="px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white lc">
         </div>
-        <button onclick="doLogout()" class="btn btn-red text-white px-4 py-1.5" style="font-size:10px;">LOGOUT</button>
-    </header>
-    <main style="flex:1;padding:12px;overflow:hidden;display:flex;flex-direction:column;gap:10px;height:calc(100vh - 54px);">
-        <div class="glass rounded-xl px-3 py-2" style="flex-shrink:0;">
-            <input type="text" id="mitra-search" oninput="renderMitraTable()" placeholder="CARI NO. POLISI ATAU NAMA BPKB..." class="gi w-full px-3 py-2 rounded-xl" style="font-size:11px;font-weight:700;">
+        <div class="flex gap-2">
+          <button onclick="savMitra()" id="bms" class="flex-1 bb text-white py-1.5 text-xs font-bold cursor-pointer">TAMBAH/UPDATE MITRA</button>
+          <button onclick="clrMitra()" id="bmx" class="hidden bgr text-white px-3 py-1.5 text-xs font-bold cursor-pointer">BATAL</button>
         </div>
-        <div class="tscroll glass rounded-xl" style="flex:1;min-height:0;">
-            <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:650px;">
-                <thead>
-                    <tr style="background:rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.1);">
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">#</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">NO. POLISI</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">JENIS PENGERJAAN</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">NAMA BPKB</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">TGL AMBIL</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">STATUS</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">CATATAN</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">TGL KEMBALI</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody-mitra"></tbody>
-            </table>
+        <div class="border border-white/10 rounded-lg bg-black/20 max-h-36 overflow-y-auto">
+          <table class="w-full text-xs"><tbody id="lmitra" class="lc text-gray-200 divide-y divide-white/5"></tbody></table>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex-shrink:0;">
-            <div class="glass rounded-xl px-3 py-2 flex justify-between items-center" style="border-left:3px solid #3b82f6;">
-                <span style="font-size:9px;color:#93c5fd;font-weight:700;">ON PROCESS</span>
-                <span id="mitra-stat-p" style="font-size:16px;font-weight:900;color:#fff;">0</span>
-            </div>
-            <div class="glass rounded-xl px-3 py-2 flex justify-between items-center" style="border-left:3px solid #10b981;">
-                <span style="font-size:9px;color:#6ee7b7;font-weight:700;">SELESAI</span>
-                <span id="mitra-stat-s" style="font-size:16px;font-weight:900;color:#fff;">0</span>
-            </div>
-            <button onclick="mitraPDF()" class="btn btn-green text-white" style="font-size:10px;height:38px;">PRATINJAU PDF</button>
+      </div>
+    </div>
+    <!-- Petugas -->
+    <div class="gp p-4 rounded-xl border border-pink-500/30">
+      <h3 class="text-xs font-bold text-pink-300 mb-2">MANAJEMEN DATA PETUGAS</h3>
+      <div class="space-y-2">
+        <input type="hidden" id="pe2">
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" id="pna" oninput="this.value=this.value.toUpperCase()" placeholder="NAMA PETUGAS..." class="px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white uppercase">
+          <input type="password" id="ppa" placeholder="Password..." class="px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white lc">
         </div>
-    </main>
-</div>
-
-<!-- ============================================================
-     PETUGAS DASHBOARD
-============================================================ -->
-<div id="pg-petugas" class="fixed inset-0 flex-col overflow-hidden" style="background:rgba(15,23,42,.5);backdrop-filter:blur(12px);">
-    <header class="flex justify-between items-center px-4 py-3 border-b" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.1);flex-shrink:0;">
-        <div>
-            <p style="font-size:10px;color:#2dd4bf;font-weight:700;">PETUGAS</p>
-            <p id="petugas-name-hdr" style="font-size:14px;font-weight:900;color:#fff;" class="no-upper"></p>
+        <div class="flex gap-2">
+          <button onclick="savPtgs()" id="bps" class="flex-1 bpi text-white py-1.5 text-xs font-bold cursor-pointer">TAMBAH/UPDATE PETUGAS</button>
+          <button onclick="clrPtgs()" id="bpx" class="hidden bgr text-white px-3 py-1.5 text-xs font-bold cursor-pointer">BATAL</button>
         </div>
-        <button onclick="doLogout()" class="btn btn-red text-white px-4 py-1.5" style="font-size:10px;">LOGOUT</button>
-    </header>
-    <main style="flex:1;padding:12px;overflow:hidden;display:flex;flex-direction:column;gap:10px;height:calc(100vh - 54px);">
-        <div class="glass rounded-xl px-3 py-2" style="flex-shrink:0;">
-            <input type="text" id="petugas-search" oninput="renderPetugasTable()" placeholder="CARI NO. POLISI ATAU NAMA BPKB..." class="gi w-full px-3 py-2 rounded-xl" style="font-size:11px;font-weight:700;">
+        <div class="border border-white/10 rounded-lg bg-black/20 max-h-36 overflow-y-auto">
+          <table class="w-full text-xs"><tbody id="lptgs" class="lc text-gray-200 divide-y divide-white/5"></tbody></table>
         </div>
-        <div class="tscroll glass rounded-xl" style="flex:1;min-height:0;">
-            <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:700px;">
-                <thead>
-                    <tr style="background:rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.1);">
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">#</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">NO. POLISI</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">JENIS PENGERJAAN</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">NAMA BPKB</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">TGL SERAH KE PETUGAS</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">STATUS</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">MITRA</th>
-                        <th class="px-3 py-2 text-left" style="color:#94a3b8;font-weight:700;white-space:nowrap;">CATATAN MITRA</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody-petugas"></tbody>
-            </table>
+      </div>
+    </div>
+    <!-- Layanan -->
+    <div class="gp p-4 rounded-xl">
+      <h3 class="text-xs font-bold text-blue-300 mb-2">MANAJEMEN LAYANAN PENGERJAAN</h3>
+      <div class="space-y-2">
+        <input type="hidden" id="ke2">
+        <input type="text" id="kna" oninput="this.value=this.value.toUpperCase()" placeholder="NAMA LAYANAN..." class="w-full px-2 py-1.5 border border-white/10 rounded-lg text-xs bg-slate-800 text-white uppercase">
+        <div class="flex gap-2">
+          <button onclick="savKerja()" id="bks" class="flex-1 bb text-white py-1.5 text-xs font-bold cursor-pointer">TAMBAH/UPDATE LAYANAN</button>
+          <button onclick="clrKerja()" id="bkx" class="hidden bgr text-white px-3 py-1.5 text-xs font-bold cursor-pointer">BATAL</button>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex-shrink:0;">
-            <div class="glass rounded-xl px-3 py-2 flex justify-between items-center" style="border-left:3px solid #3b82f6;">
-                <span style="font-size:9px;color:#93c5fd;font-weight:700;">ON PROCESS</span>
-                <span id="petugas-stat-p" style="font-size:16px;font-weight:900;color:#fff;">0</span>
-            </div>
-            <div class="glass rounded-xl px-3 py-2 flex justify-between items-center" style="border-left:3px solid #10b981;">
-                <span style="font-size:9px;color:#6ee7b7;font-weight:700;">SELESAI</span>
-                <span id="petugas-stat-s" style="font-size:16px;font-weight:900;color:#fff;">0</span>
-            </div>
+        <div class="border border-white/10 rounded-lg bg-black/20 max-h-36 overflow-y-auto">
+          <table class="w-full text-xs"><tbody id="lkerja" class="text-gray-200 divide-y divide-white/5"></tbody></table>
         </div>
-    </main>
-</div>
-
-<!-- ============================================================
-     ADMIN DASHBOARD
-============================================================ -->
-<div id="pg-admin" class="fixed inset-0 flex-col overflow-hidden" style="background:rgba(15,23,42,.6);backdrop-filter:blur(14px);">
-    <!-- Header -->
-    <header class="flex flex-wrap justify-between items-center px-3 py-2 border-b gap-2" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.1);flex-shrink:0;">
-        <div class="flex flex-wrap items-center gap-2">
-            <span style="font-size:11px;font-weight:900;color:#fff;letter-spacing:.08em;">ADMIN</span>
-            <div class="flex flex-wrap gap-1">
-                <button id="tbtn-input" onclick="switchTab('input')" class="tab-btn active px-2 py-1 rounded-md" style="font-size:9px;font-weight:700;">INPUT BERKAS</button>
-                <button id="tbtn-semua" onclick="switchTab('semua')" class="tab-btn px-2 py-1 rounded-md" style="font-size:9px;font-weight:700;">SEMUA BERKAS</button>
-                <button id="tbtn-konfig" onclick="switchTab('konfig')" class="tab-btn px-2 py-1 rounded-md" style="font-size:9px;font-weight:700;">KONFIGURASI</button>
-            </div>
-        </div>
-        <button onclick="doLogout()" class="btn btn-red text-white px-3 py-1" style="font-size:9px;">LOGOUT</button>
-    </header>
-
-    <!-- TAB: INPUT BERKAS -->
-    <main id="tab-input" style="flex:1;padding:12px;overflow-y:auto;height:calc(100vh - 52px);">
-        <div class="glass p-4 rounded-xl" style="max-width:480px;margin:0 auto;">
-            <h3 style="font-size:11px;font-weight:900;color:#93c5fd;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.1);">INPUT DATA BERKAS</h3>
-            <form id="form-berkas" onsubmit="saveBerkas(event)" style="display:flex;flex-direction:column;gap:10px;">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    <div>
-                        <label class="lbl">NAMA MITRA</label>
-                        <select id="f-mitra" required class="fi no-upper"></select>
-                    </div>
-                    <div>
-                        <label class="lbl">NAMA PETUGAS</label>
-                        <select id="f-petugas" class="fi no-upper"><option value="">-- TIDAK ADA --</option></select>
-                    </div>
-                </div>
-                <div>
-                    <label class="lbl">JENIS PENGERJAAN</label>
-                    <select id="f-pengerjaan" required onchange="onPengerjaanChange()" class="fi"></select>
-                </div>
-
-                <!-- Field khusus MUTASI -->
-                <div id="field-mutasi" style="display:none;flex-direction:column;gap:8px;padding:10px;border-radius:8px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);">
-                    <p style="font-size:9px;color:#c4b5fd;font-weight:700;">📋 DATA MUTASI</p>
-                    <div><label class="lbl">MUTASI KE ATAS NAMA</label><input type="text" id="f-mutasi-nama" oninput="this.value=this.value.toUpperCase()" class="fi"></div>
-                    <div><label class="lbl">MUTASI KE ALAMAT</label><input type="text" id="f-mutasi-alamat" oninput="this.value=this.value.toUpperCase()" class="fi"></div>
-                    <div><label class="lbl">NO. POLISI BARU SETELAH MUTASI</label><input type="text" id="f-mutasi-nopol" oninput="this.value=this.value.toUpperCase()" class="fi"></div>
-                </div>
-
-                <!-- Field khusus BBN -->
-                <div id="field-bbn" style="display:none;flex-direction:column;gap:8px;padding:10px;border-radius:8px;background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.3);">
-                    <p style="font-size:9px;color:#5eead4;font-weight:700;">📋 DATA BBN</p>
-                    <div><label class="lbl">BBN KE ATAS NAMA</label><input type="text" id="f-bbn-nama" oninput="this.value=this.value.toUpperCase()" class="fi"></div>
-                    <div><label class="lbl">BBN KE ALAMAT</label><input type="text" id="f-bbn-alamat" oninput="this.value=this.value.toUpperCase()" class="fi"></div>
-                    <div><label class="lbl">NO. POLISI BARU SETELAH BBN</label><input type="text" id="f-bbn-nopol" oninput="this.value=this.value.toUpperCase()" class="fi"></div>
-                </div>
-
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    <div><label class="lbl">NOMOR POLISI</label><input type="text" id="f-nopol" required oninput="this.value=this.value.toUpperCase()" placeholder="BL 1234 AB" class="fi"></div>
-                    <div><label class="lbl">NAMA PADA BPKB</label><input type="text" id="f-bpkb" required oninput="this.value=this.value.toUpperCase()" class="fi"></div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    <div><label class="lbl">TGL AMBIL DARI MITRA</label><input type="date" id="f-tgl-ambil" class="fi"></div>
-                    <div><label class="lbl">TGL SERAH KE PETUGAS</label><input type="date" id="f-tgl-serah" class="fi"></div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    <div>
-                        <label class="lbl">STATUS BERKAS</label>
-                        <select id="f-status" onchange="onStatusChange()" class="fi">
-                            <option value="On Process">ON PROCESS</option>
-                            <option value="Selesai">SELESAI</option>
-                        </select>
-                    </div>
-                    <div><label class="lbl">TGL KEMBALI KE MITRA</label><input type="date" id="f-tgl-kembali" class="fi"></div>
-                </div>
-                <div><label class="lbl">CATATAN MITRA</label><textarea id="f-catatan" rows="2" oninput="this.value=this.value.toUpperCase()" class="fi" style="resize:none;"></textarea></div>
-                <div><label class="lbl">CATATAN PETUGAS</label><textarea id="f-catatan-petugas" rows="2" oninput="this.value=this.value.toUpperCase()" class="fi" style="resize:none;"></textarea></div>
-                <button type="submit" class="btn btn-blue text-white py-2 w-full" style="font-size:11px;">💾 SAVE BERKAS</button>
-            </form>
-        </div>
-    </main>
-
-    <!-- TAB: SEMUA BERKAS -->
-    <main id="tab-semua" style="flex:1;padding:12px;overflow:hidden;display:none;flex-direction:column;gap:10px;height:calc(100vh - 52px);">
-        <div class="glass p-3 rounded-xl flex flex-col" style="flex:1;min-height:0;overflow:hidden;">
-            <div class="flex flex-wrap justify-between items-center gap-2 mb-2" style="flex-shrink:0;">
-                <div class="flex flex-wrap items-center gap-2">
-                    <h3 style="font-size:11px;font-weight:900;color:#fff;">SEMUA BERKAS</h3>
-                    <span style="font-size:9px;color:#64748b;font-weight:500;text-transform:none;">*Klik teks untuk edit. Geser header kolom untuk ubah urutan.</span>
-                    <button onclick="cleanBad()" class="btn btn-orange text-white px-2 py-0.5" style="font-size:9px;">🧹 BERSIHKAN DATA RUSAK</button>
-                </div>
-                <input type="text" id="admin-search" oninput="renderAdminTable()" placeholder="CARI BERKAS..." class="fi" style="width:180px;">
-            </div>
-            <div class="tscroll" style="flex:1;min-height:0;border:1px solid rgba(255,255,255,.06);border-radius:8px;">
-                <table id="admin-table" style="width:100%;border-collapse:collapse;font-size:11px;min-width:1100px;">
-                    <thead id="admin-thead" style="position:sticky;top:0;background:#0f172a;z-index:10;"></thead>
-                    <tbody id="admin-tbody"></tbody>
-                </table>
-            </div>
-        </div>
-        <div class="glass p-3 rounded-xl" style="flex-shrink:0;">
-            <p style="font-size:9px;font-weight:900;color:#475569;letter-spacing:.08em;margin-bottom:4px;">LOG AKTIVITAS</p>
-            <div id="log-container" style="background:rgba(0,0,0,.3);padding:8px;border-radius:6px;font-size:10px;height:64px;overflow-y:auto;font-family:monospace;color:#93c5fd;border:1px solid rgba(255,255,255,.05);"></div>
-        </div>
-    </main>
-
-    <!-- TAB: KONFIGURASI -->
-    <main id="tab-konfig" style="flex:1;padding:12px;overflow-y:auto;display:none;flex-direction:column;gap:12px;height:calc(100vh - 52px);">
-
-        <!-- Password Admin -->
-        <div class="glass p-4 rounded-xl" style="border:1px solid rgba(251,191,36,.3);">
-            <h3 style="font-size:11px;font-weight:900;color:#fbbf24;margin-bottom:10px;">🔑 UBAH PASSWORD ADMIN</h3>
-            <div style="display:flex;flex-direction:column;gap:8px;">
-                <div><label class="lbl">PASSWORD SAAT INI</label><input type="password" id="ap-lama" class="fi no-upper" placeholder="Password saat ini..."></div>
-                <div><label class="lbl">PASSWORD BARU</label><input type="password" id="ap-baru" class="fi no-upper" placeholder="Password baru..."></div>
-                <div><label class="lbl">KONFIRMASI PASSWORD BARU</label><input type="password" id="ap-konfirm" class="fi no-upper" placeholder="Ulangi password baru..."></div>
-                <button onclick="ubahPassAdmin()" class="btn btn-yellow text-white py-1.5 w-full" style="font-size:11px;">SIMPAN PASSWORD BARU</button>
-            </div>
-        </div>
-
-        <!-- Manajemen Mitra -->
-        <div class="glass p-4 rounded-xl">
-            <h3 style="font-size:11px;font-weight:900;color:#93c5fd;margin-bottom:10px;">👥 MANAJEMEN DATA MITRA</h3>
-            <div style="display:flex;flex-direction:column;gap:8px;">
-                <input type="hidden" id="km-edit-idx" value="">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    <div><label class="lbl">NAMA MITRA</label><input type="text" id="km-name" oninput="this.value=this.value.toUpperCase()" placeholder="NAMA MITRA..." class="fi"></div>
-                    <div><label class="lbl">PASSWORD</label><input type="password" id="km-pass" placeholder="Password mitra..." class="fi no-upper"></div>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="saveMitra()" id="km-btn" class="btn btn-blue text-white py-1.5 flex-1" style="font-size:11px;">TAMBAH/UPDATE MITRA</button>
-                    <button onclick="clearMitraForm()" id="km-batal" class="btn btn-gray text-white px-4 py-1.5" style="font-size:11px;display:none;">BATAL</button>
-                </div>
-                <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(0,0,0,.2);max-height:140px;overflow-y:auto;">
-                    <table style="width:100%;font-size:11px;"><tbody id="list-mitra" class="no-upper"></tbody></table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Manajemen Petugas -->
-        <div class="glass p-4 rounded-xl" style="border:1px solid rgba(45,212,191,.25);">
-            <h3 style="font-size:11px;font-weight:900;color:#2dd4bf;margin-bottom:10px;">🪪 MANAJEMEN DATA PETUGAS</h3>
-            <div style="display:flex;flex-direction:column;gap:8px;">
-                <input type="hidden" id="kp-edit-idx" value="">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    <div><label class="lbl">NAMA PETUGAS</label><input type="text" id="kp-name" oninput="this.value=this.value.toUpperCase()" placeholder="NAMA PETUGAS..." class="fi"></div>
-                    <div><label class="lbl">PASSWORD</label><input type="password" id="kp-pass" placeholder="Password petugas..." class="fi no-upper"></div>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="savePetugas()" id="kp-btn" class="btn btn-teal text-white py-1.5 flex-1" style="font-size:11px;">TAMBAH/UPDATE PETUGAS</button>
-                    <button onclick="clearPetugasForm()" id="kp-batal" class="btn btn-gray text-white px-4 py-1.5" style="font-size:11px;display:none;">BATAL</button>
-                </div>
-                <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(0,0,0,.2);max-height:140px;overflow-y:auto;">
-                    <table style="width:100%;font-size:11px;"><tbody id="list-petugas" class="no-upper"></tbody></table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Manajemen Layanan -->
-        <div class="glass p-4 rounded-xl">
-            <h3 style="font-size:11px;font-weight:900;color:#93c5fd;margin-bottom:10px;">🔧 MANAJEMEN LAYANAN PENGERJAAN</h3>
-            <div style="display:flex;flex-direction:column;gap:8px;">
-                <input type="hidden" id="kl-edit-idx" value="">
-                <input type="text" id="kl-name" oninput="this.value=this.value.toUpperCase()" placeholder="CONTOH: BALIK NAMA..." class="fi">
-                <div class="flex gap-2">
-                    <button onclick="saveLayanan()" id="kl-btn" class="btn btn-blue text-white py-1.5 flex-1" style="font-size:11px;">TAMBAH/UPDATE LAYANAN</button>
-                    <button onclick="clearLayananForm()" id="kl-batal" class="btn btn-gray text-white px-4 py-1.5" style="font-size:11px;display:none;">BATAL</button>
-                </div>
-                <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(0,0,0,.2);max-height:140px;overflow-y:auto;">
-                    <table style="width:100%;font-size:11px;"><tbody id="list-layanan"></tbody></table>
-                </div>
-            </div>
-        </div>
-
-        <p style="font-size:9px;color:#475569;text-align:center;text-transform:none;padding-bottom:8px;">*Klik & tahan ☰ lalu geser untuk mengurutkan posisi dropdown.</p>
-    </main>
+      </div>
+    </div>
+    <p class="text-[9px] text-gray-400 text-center normal-case pb-3">*Klik & tahan ☰ lalu geser untuk mengurutkan posisi dropdown.</p>
+  </main>
 </div>
 
 <script>
-// ============================================================
-// STATE
-// ============================================================
-let dataMitra    = [];
-let dataPetugas  = [];
-let dataLayanan  = [];
-let dataBerkas   = [];
-let dataLog      = [];
-let adminPass    = 'admin123';
-let loggedInUser = null;  // {name, role: 'admin'|'mitra'|'petugas'}
-let unsubBerkas  = null;
-let autoLogoutTimer = null;
+// ===== STATE =====
+let DB={mitra:[],petugas:[],kerja:[],berkas:[],log:[],ap:'admin123',co:null};
+let ME=null,ROLE=null,unsubB=null;
+const IDLE=10*60*1000;
+let idleT=null;
 
-// Urutan kolom admin tabel (bisa di-drag)
-let kolomAdmin = [
-    {key:'mitra',      label:'MITRA',                  type:'text'},
-    {key:'pengerjaan', label:'PENGERJAAN',              type:'select-layanan'},
-    {key:'nopol',      label:'NO. POLISI',              type:'text'},
-    {key:'tglAmbil',   label:'TGL AMBIL MITRA',         type:'date'},
-    {key:'tglKembali', label:'TGL KEMBALI MITRA',       type:'date'},
-    {key:'bpkb',       label:'NAMA BPKB',               type:'text'},
-    {key:'status',     label:'STATUS',                  type:'select-status'},
-    {key:'catatan',    label:'CATATAN MITRA',            type:'text'},
-    {key:'petugas',    label:'NAMA PETUGAS',             type:'select-petugas'},
-    {key:'tglSerah',   label:'TGL SERAH KE PETUGAS',    type:'date'},
-    {key:'catatanPetugas', label:'CATATAN PETUGAS',     type:'text'},
+const DCOLS=[
+  {k:'#',    lb:'#',                 fx:true},
+  {k:'mitra',lb:'MITRA',            fx:false},
+  {k:'kerja',lb:'PENGERJAAN',       fx:false},
+  {k:'nopol',lb:'NO. POLISI',       fx:false},
+  {k:'tglambil',lb:'TGL AMBIL',     fx:false},
+  {k:'tglkembali',lb:'TGL KEMBALI', fx:false},
+  {k:'bpkb', lb:'NAMA BPKB',        fx:false},
+  {k:'status',lb:'STATUS',          fx:false},
+  {k:'catatan',lb:'CATATAN MITRA',  fx:false},
+  {k:'petugas',lb:'PETUGAS',        fx:false},
+  {k:'tglserah',lb:'TGL SERAH',     fx:false},
+  {k:'catpetugas',lb:'CAT. PETUGAS',fx:false},
+  {k:'aksi', lb:'AKSI',             fx:true},
 ];
+let colOrd=DCOLS.map(c=>c.k);
 
-// ============================================================
-// AUTO LOGOUT (10 menit tidak ada aktivitas)
-// ============================================================
-function resetAutoLogout() {
-    clearTimeout(autoLogoutTimer);
-    if (loggedInUser) {
-        autoLogoutTimer = setTimeout(() => {
-            alert('SESI ANDA TELAH HABIS. SILAKAN LOGIN KEMBALI.');
-            doLogout();
-        }, 10 * 60 * 1000);
-    }
-}
-document.addEventListener('click', resetAutoLogout);
-document.addEventListener('keydown', resetAutoLogout);
-document.addEventListener('touchstart', resetAutoLogout);
+// ===== FB INIT =====
+function onFB(){
+  Promise.all([
+    FS.gc('mitraList'),FS.gc('petugasList'),FS.gc('kerjaList'),
+    FS.gc('logList'),FS.gc('adminPass'),FS.gc('colOrd'),FS.gab()
+  ]).then(([mi,pt,ke,lg,ap,co,bk])=>{
+    DB.mitra  = mi||[{name:'SINARMAS',pass:'sinarmas123'}];
+    DB.petugas= pt||[];
+    DB.kerja  = ke||['BALIK NAMA','PERPANJANG STNK','MUTASI KELUAR','BBN'];
+    DB.log    = lg||[];
+    DB.ap     = ap||'admin123';
+    DB.berkas = bk;
+    if(co) colOrd=co;
+    if(!mi) FS.sc('mitraList',DB.mitra);
+    if(!ke) FS.sc('kerjaList',DB.kerja);
+    if(!ap) FS.sc('adminPass',DB.ap);
 
-// ============================================================
-// FIREBASE INIT
-// ============================================================
-function onFirebaseReady() {
-    Promise.all([
-        window.FS.getConfig('mitraList'),
-        window.FS.getConfig('petugasList'),
-        window.FS.getConfig('layananList'),
-        window.FS.getConfig('logList'),
-        window.FS.getConfig('adminPass'),
-        window.FS.getConfig('kolomAdmin'),
-        window.FS.getAllBerkas(),
-    ]).then(([mitra, petugas, layanan, log, apass, kolom, berkas]) => {
-        dataMitra   = mitra   || [{name:'SINARMAS',   pass:'sinarmas123'}];
-        dataPetugas = petugas || [];
-        dataLayanan = layanan || ['BALIK NAMA','PERPANJANG STNK','MUTASI','BBN','MUTASI KELUAR'];
-        dataLog     = log     || [];
-        adminPass   = apass   || 'admin123';
-        dataBerkas  = berkas;
-        if (kolom && kolom.length) kolomAdmin = kolom;
+    document.getElementById('ov').classList.add('h');
+    document.getElementById('pgl').classList.remove('h');
 
-        if (!mitra)   window.FS.setConfig('mitraList',   dataMitra);
-        if (!petugas) window.FS.setConfig('petugasList', dataPetugas);
-        if (!layanan) window.FS.setConfig('layananList', dataLayanan);
-        if (!apass)   window.FS.setConfig('adminPass',   adminPass);
-
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('pg-login').classList.remove('hidden');
-
-        // Realtime listeners
-        if (unsubBerkas) unsubBerkas();
-        unsubBerkas = window.FS.listenBerkas(data => {
-            dataBerkas = data;
-            if (!loggedInUser) return;
-            if (loggedInUser.role === 'admin')   renderAdminTable();
-            if (loggedInUser.role === 'mitra')   renderMitraTable();
-            if (loggedInUser.role === 'petugas') renderPetugasTable();
-        });
-        window.FS.listenConfig('mitraList',   v => { if(v){dataMitra=v; initForms(); renderListMitra();} });
-        window.FS.listenConfig('petugasList', v => { if(v){dataPetugas=v; initForms(); renderListPetugas();} });
-        window.FS.listenConfig('layananList', v => { if(v){dataLayanan=v; initForms(); renderListLayanan();} });
-        window.FS.listenConfig('logList',     v => { dataLog=v||[]; renderLogs(); });
-        window.FS.listenConfig('adminPass',   v => { if(v) adminPass=v; });
-        window.FS.listenConfig('kolomAdmin',  v => { if(v&&v.length){kolomAdmin=v; renderAdminTable();} });
+    if(unsubB) unsubB();
+    unsubB=FS.listen('berkas',null,(d)=>{
+      DB.berkas=d;
+      if(ROLE==='mitra') renderM();
+      if(ROLE==='petugas') renderP();
+      if(ROLE==='admin') renderA();
     });
+    FS.listen('config','mitraList',(v)=>{if(v){DB.mitra=v;initF();rMitra();}});
+    FS.listen('config','petugasList',(v)=>{if(v){DB.petugas=v;initF();rPtgs();}});
+    FS.listen('config','kerjaList',(v)=>{if(v){DB.kerja=v;initF();}});
+    FS.listen('config','logList',(v)=>{DB.log=v||[];renderLog();});
+    FS.listen('config','adminPass',(v)=>{if(v)DB.ap=v;});
+    FS.listen('config','colOrd',(v)=>{if(v){colOrd=v;renderHead();renderA();}});
+  }).catch(e=>{
+    console.error('Firebase error:',e);
+    document.getElementById('ov').innerHTML='<p class="text-red-400 text-xs text-center p-4">GAGAL TERHUBUNG KE SERVER.<br>Periksa koneksi internet Anda.</p>';
+  });
+}
+if(window.fbReady) onFB();
+else window.addEventListener('fbReady',onFB);
+
+// ===== IDLE =====
+function resetIdle(){clearTimeout(idleT);if(ROLE)idleT=setTimeout(()=>doLogout(true),IDLE);}
+['click','keydown','touchstart','mousemove'].forEach(e=>document.addEventListener(e,resetIdle,{passive:true}));
+
+// ===== LOGIN =====
+function doLogin(){
+  const u=document.getElementById('l-u').value.trim();
+  const p=document.getElementById('l-p').value.trim();
+  if(!u||!p){alert('USERNAME DAN PASSWORD WAJIB DIISI!');return;}
+  if(u.toLowerCase()==='admin'&&p.toLowerCase()===DB.ap.toLowerCase()){ME='admin';ROLE='admin';showPg('admin');addLog('LOGIN','ADMIN');return;}
+  const m=DB.mitra.find(x=>x.name.toLowerCase()===u.toLowerCase());
+  if(m&&m.pass.toLowerCase()===p.toLowerCase()){ME=m.name;ROLE='mitra';showPg('mitra');addLog('LOGIN',ME+' (MITRA)');return;}
+  const pt=DB.petugas.find(x=>x.name.toLowerCase()===u.toLowerCase());
+  if(pt&&pt.pass.toLowerCase()===p.toLowerCase()){ME=pt.name;ROLE='petugas';showPg('petugas');addLog('LOGIN',ME+' (PETUGAS)');return;}
+  alert('USERNAME ATAU PASSWORD SALAH!');
+}
+document.getElementById('l-p').addEventListener('keypress',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('l-u').addEventListener('keypress',e=>{if(e.key==='Enter')doLogin();});
+
+function doLogout(auto=false){
+  clearTimeout(idleT);
+  if(ROLE&&ROLE!=='admin') addLog('LOGOUT',ME+(ROLE==='mitra'?' (MITRA)':' (PETUGAS)'));
+  else if(ROLE==='admin') addLog('LOGOUT','ADMIN');
+  if(auto) alert('SESI BERAKHIR KARENA TIDAK ADA AKTIVITAS SELAMA 10 MENIT.');
+  ME=null;ROLE=null;
+  document.getElementById('l-u').value='';
+  document.getElementById('l-p').value='';
+  ['pga','pgm','pgp'].forEach(id=>document.getElementById(id).classList.remove('s'));
+  document.getElementById('pgl').classList.remove('h');
 }
 
-if (window.firebaseReady) onFirebaseReady();
-else window.addEventListener('firebaseReady', onFirebaseReady);
+function showPg(role){
+  document.getElementById('pgl').classList.add('h');
+  if(role==='admin'){
+    document.getElementById('pga').classList.add('s');
+    sw('b');initF();renderHead();renderA();
+  } else if(role==='mitra'){
+    document.getElementById('pgm').classList.add('s');
+    document.getElementById('mn').innerText=ME;renderM();
+  } else {
+    document.getElementById('pgp').classList.add('s');
+    document.getElementById('pn').innerText=ME;renderP();
+  }
+  resetIdle();
+}
 
-// ============================================================
-// LOGIN / LOGOUT
-// ============================================================
-function doLogin() {
-    const user = document.getElementById('login-user').value.trim().toUpperCase();
-    const pass = document.getElementById('login-pass').value.trim();
-    const err  = document.getElementById('login-err');
-    err.style.display = 'none';
+// ===== TABS =====
+function sw(t){
+  ['b','s','k'].forEach(n=>{
+    document.getElementById('tab-'+n).style.display='none';
+    document.getElementById('t'+n+'b').classList.remove('ta');
+  });
+  document.getElementById('tab-'+t).style.display=(t==='b'?'block':'flex');
+  document.getElementById('t'+t+'b').classList.add('ta');
+  const hs=document.getElementById('hdr-semua');
+  if(t==='s'){hs.classList.remove('hidden');hs.classList.add('flex');renderHead();renderA();renderLog();initFilter();}
+  else{hs.classList.add('hidden');hs.classList.remove('flex');}
+  if(t==='b') initF();
+  if(t==='k'){rMitra();rPtgs();rKerja();}
+}
 
-    if (!user || !pass) { err.style.display='block'; return; }
+// ===== FILTER =====
+let filterOpen=false;
+function toggleFilter(){
+  filterOpen=!filterOpen;
+  const fp=document.getElementById('filter-panel');
+  if(filterOpen){fp.classList.add('open');initFilter();}
+  else fp.classList.remove('open');
+}
+function initFilter(){
+  const fm=document.getElementById('f-mitra');
+  const fp=document.getElementById('f-ptgs');
+  const fk=document.getElementById('f-kerja');
+  const curM=fm.value,curP=fp.value,curK=fk.value;
+  fm.innerHTML='<option value="">SEMUA MITRA</option>';
+  DB.mitra.forEach(m=>fm.innerHTML+=`<option value="${m.name}" ${curM===m.name?'selected':''}>${m.name}</option>`);
+  fp.innerHTML='<option value="">SEMUA PETUGAS</option>';
+  DB.petugas.forEach(p=>fp.innerHTML+=`<option value="${p.name}" ${curP===p.name?'selected':''}>${p.name}</option>`);
+  fk.innerHTML='<option value="">SEMUA PENGERJAAN</option>';
+  DB.kerja.forEach(k=>fk.innerHTML+=`<option value="${k}" ${curK===k?'selected':''}>${k}</option>`);
+}
+function resetFilter(){
+  ['f-mitra','f-ptgs','f-status','f-kerja','f-tgl1','f-tgl2'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  renderA();
+}
+function getFiltered(){
+  const kw=(document.getElementById('as')?.value||'').toLowerCase();
+  const fm=document.getElementById('f-mitra')?.value||'';
+  const fp=document.getElementById('f-ptgs')?.value||'';
+  const fs=document.getElementById('f-status')?.value||'';
+  const fk=document.getElementById('f-kerja')?.value||'';
+  const ft1=document.getElementById('f-tgl1')?.value||'';
+  const ft2=document.getElementById('f-tgl2')?.value||'';
+  return DB.berkas.filter(b=>{
+    if(kw&&!(b.nopol||'').toLowerCase().includes(kw)&&!(b.bpkb||'').toLowerCase().includes(kw)&&!(b.mitra||'').toLowerCase().includes(kw)&&!(b.petugas||'').toLowerCase().includes(kw)) return false;
+    if(fm&&b.mitra!==fm) return false;
+    if(fp&&(b.petugas||'')!==fp) return false;
+    if(fs&&b.status!==fs) return false;
+    if(fk&&b.kerja!==fk) return false;
+    if(ft1&&b.tglambil&&b.tglambil!=='-'&&b.tglambil<ft1) return false;
+    if(ft2&&b.tglambil&&b.tglambil!=='-'&&b.tglambil>ft2) return false;
+    return true;
+  });
+}
 
-    // Cek admin
-    if (user === 'ADMIN' && pass.toLowerCase() === adminPass.toLowerCase()) {
-        loggedInUser = {name:'ADMIN', role:'admin'};
-        showPage('admin');
-        return;
+// ===== INIT FORMS =====
+function initF(){
+  const sm=document.getElementById('im');
+  if(sm){sm.innerHTML='';DB.mitra.forEach(m=>{sm.innerHTML+=`<option value="${m.name}">${m.name}</option>`;});}
+  const sp=document.getElementById('ipt');
+  if(sp){sp.innerHTML='<option value="">-- PILIH PETUGAS --</option>';DB.petugas.forEach(p=>{sp.innerHTML+=`<option value="${p.name}">${p.name}</option>`;});}
+  const sk=document.getElementById('ik');
+  if(sk){sk.innerHTML='';DB.kerja.forEach(j=>{sk.innerHTML+=`<option value="${j}">${j}</option>`;});onKerja();}
+  const ta=document.getElementById('ita');
+  if(ta&&!ta.value) ta.value=td();
+}
+function onKerja(){
+  const v=(document.getElementById('ik')?.value||'').toUpperCase();
+  document.getElementById('fmut').classList.toggle('hidden',!v.includes('MUTASI'));
+  document.getElementById('fbbn').classList.toggle('hidden',!v.includes('BBN'));
+}
+function onStatus(){
+  if(document.getElementById('ist')?.value==='Selesai'){
+    const tk=document.getElementById('itk');
+    if(tk&&!tk.value) tk.value=td();
+  }
+}
+function td(){return new Date().toISOString().split('T')[0];}
+
+// ===== SAVE BERKAS =====
+async function saveBerkas(e){
+  e.preventDefault();
+  const nopol=document.getElementById('inp').value.toUpperCase().trim();
+  if(!nopol){alert('NOMOR POLISI WAJIB!');return;}
+  const kerja=document.getElementById('ik').value.toUpperCase();
+  const b={
+    id:Date.now(),
+    mitra:document.getElementById('im').value.toUpperCase(),
+    petugas:document.getElementById('ipt').value||'',
+    kerja,nopol,
+    bpkb:document.getElementById('ibk').value.toUpperCase().trim(),
+    tglambil:document.getElementById('ita').value||'-',
+    tglserah:document.getElementById('its').value||'-',
+    status:document.getElementById('ist').value,
+    catatan:document.getElementById('ict').value.toUpperCase()||'-',
+    catpetugas:document.getElementById('icp').value.toUpperCase()||'-',
+    tglkembali:document.getElementById('itk').value||'-',
+  };
+  if(kerja.includes('MUTASI')){b.mutasiNama=document.getElementById('imn').value.toUpperCase()||'-';b.mutasiAlamat=document.getElementById('ima').value.toUpperCase()||'-';b.mutasiNopol=document.getElementById('imp').value.toUpperCase()||'-';}
+  if(kerja.includes('BBN')){b.bbnNama=document.getElementById('ibn').value.toUpperCase()||'-';b.bbnAlamat=document.getElementById('iba').value.toUpperCase()||'-';b.bbnNopol=document.getElementById('ibp').value.toUpperCase()||'-';}
+  const ex=DB.berkas.find(x=>x.nopol===nopol&&x.tglambil===b.tglambil);
+  if(ex) b.id=ex.id;
+  await FS.sb(b);
+  alert('DATA BERKAS BERHASIL DISIMPAN!');
+  document.getElementById('frm').reset();
+  initF();
+}
+
+// ===== CHANGE STATUS =====
+async function changeStatus(id,ns){
+  const b=DB.berkas.find(x=>x.id===id);if(!b)return;
+  const u={...b,status:ns};
+  if(ns==='Selesai'&&(!b.tglkembali||b.tglkembali==='-')) u.tglkembali=td();
+  await FS.sb(u);
+}
+async function delBerkas(id){
+  if(!confirm('HAPUS DATA INI?'))return;
+  await FS.db2(id);
+}
+async function saveInline(id,f,v){
+  const b=DB.berkas.find(x=>x.id===id);if(!b)return;
+  await FS.sb({...b,[f]:v});
+}
+
+// ===== ADMIN TABLE HEAD (DRAGGABLE) =====
+let dsrc=null;
+function renderHead(){
+  const th=document.getElementById('ahead');if(!th)return;
+  const cols=colOrd.map(k=>DCOLS.find(c=>c.k===k)).filter(Boolean);
+  th.innerHTML='<tr>'+cols.map(c=>{
+    const d=!c.fx?`draggable="true" ondragstart="dStart(event,'${c.k}')" ondragover="dOver(event)" ondrop="dDrop(event,'${c.k}')" ondragend="dEnd()"`:'';
+    return `<th class="p-2 font-bold text-gray-300 bg-slate-900 whitespace-nowrap select-none" ${d} data-k="${c.k}">${c.lb}</th>`;
+  }).join('')+'</tr>';
+}
+function dStart(e,k){dsrc=k;e.dataTransfer.effectAllowed='move';}
+function dOver(e){e.preventDefault();e.currentTarget.classList.add('dov');}
+function dEnd(){document.querySelectorAll('th[data-k]').forEach(t=>t.classList.remove('dov'));}
+async function dDrop(e,tk){
+  e.preventDefault();dEnd();
+  if(!dsrc||dsrc===tk)return;
+  if(DCOLS.find(c=>c.k===dsrc)?.fx||DCOLS.find(c=>c.k===tk)?.fx)return;
+  const si=colOrd.indexOf(dsrc),ti=colOrd.indexOf(tk);
+  colOrd.splice(si,1);colOrd.splice(ti,0,dsrc);
+  await FS.sc('colOrd',colOrd);
+  renderHead();renderA();
+}
+
+// ===== RENDER ADMIN =====
+function renderA(){
+  const tbody=document.getElementById('tba');if(!tbody)return;
+  renderHead();
+  const cols=colOrd.map(k=>DCOLS.find(c=>c.k===k)).filter(Boolean);
+  const data=getFiltered();
+  const fc=document.getElementById('f-count');
+  if(fc) fc.innerText=data.length+' DATA TAMPIL';
+  if(data.length===0){tbody.innerHTML=`<tr><td colspan="${cols.length}" class="p-4 text-center text-gray-500">TIDAK ADA DATA</td></tr>`;return;}
+  tbody.innerHTML=data.map((b,i)=>'<tr class="hover:bg-white/5 border-b border-white/5">'+cols.map(c=>{
+    switch(c.k){
+      case '#':return`<td class="p-2 text-gray-400 font-bold">${i+1}</td>`;
+      case 'mitra':return`<td class="p-2 text-blue-300 lc ec" onclick="editC(this,${b.id},'mitra','sm')">${b.mitra||''}</td>`;
+      case 'kerja':return`<td class="p-2 ec" onclick="editC(this,${b.id},'kerja','sk')">${b.kerja||''}</td>`;
+      case 'nopol':return`<td class="p-2 font-bold text-yellow-400 ec" onclick="editC(this,${b.id},'nopol','t')">${b.nopol||''}</td>`;
+      case 'bpkb':return`<td class="p-2 ec" onclick="editC(this,${b.id},'bpkb','t')">${b.bpkb||''}</td>`;
+      case 'tglambil':return`<td class="p-2 dc whitespace-nowrap" onclick="editD(this,${b.id},'tglambil')">${b.tglambil||'-'}</td>`;
+      case 'tglkembali':return`<td class="p-2 dc text-green-400 font-bold whitespace-nowrap" onclick="editD(this,${b.id},'tglkembali')">${b.tglkembali||'-'}</td>`;
+      case 'tglserah':return`<td class="p-2 dc whitespace-nowrap" onclick="editD(this,${b.id},'tglserah')">${b.tglserah||'-'}</td>`;
+      case 'status':return`<td class="p-2"><select onchange="changeStatus(${b.id},this.value)" class="border border-white/10 rounded px-1 py-0.5 bg-slate-800 text-white text-xs"><option value="On Process" ${b.status==='On Process'?'selected':''}>ON PROCESS</option><option value="Selesai" ${b.status==='Selesai'?'selected':''}>SELESAI</option></select></td>`;
+      case 'catatan':return`<td class="p-2 max-w-[100px] truncate ec" onclick="editC(this,${b.id},'catatan','t')">${b.catatan||'-'}</td>`;
+      case 'petugas':return`<td class="p-2 text-pink-300 lc ec" onclick="editC(this,${b.id},'petugas','sp')">${b.petugas||'-'}</td>`;
+      case 'catpetugas':return`<td class="p-2 max-w-[100px] truncate ec" onclick="editC(this,${b.id},'catpetugas','t')">${b.catpetugas||'-'}</td>`;
+      case 'aksi':return`<td class="p-2 text-center"><button onclick="delBerkas(${b.id})" class="text-red-400 hover:underline font-semibold cursor-pointer text-[10px]">HAPUS</button></td>`;
+      default:return`<td class="p-2">-</td>`;
     }
-    // Cek mitra
-    const m = dataMitra.find(x => x.name.toUpperCase()===user && x.pass.toLowerCase()===pass.toLowerCase());
-    if (m) { loggedInUser={name:m.name, role:'mitra'}; showPage('mitra'); return; }
-
-    // Cek petugas
-    const p = dataPetugas.find(x => x.name.toUpperCase()===user && x.pass.toLowerCase()===pass.toLowerCase());
-    if (p) { loggedInUser={name:p.name, role:'petugas'}; showPage('petugas'); return; }
-
-    err.style.display='block';
-}
-document.getElementById('login-pass').addEventListener('keypress', e=>{ if(e.key==='Enter') doLogin(); });
-document.getElementById('login-user').addEventListener('keypress', e=>{ if(e.key==='Enter') document.getElementById('login-pass').focus(); });
-
-function showPage(role) {
-    ['pg-login','pg-admin','pg-mitra','pg-petugas'].forEach(id=>{
-        const el = document.getElementById(id);
-        el.classList.add('hidden'); el.classList.remove('show');
-    });
-    document.getElementById('pg-login').classList.add('hidden');
-
-    if (role==='admin') {
-        document.getElementById('pg-admin').classList.add('show');
-        switchTab('input');
-        initForms();
-        renderAdminTable();
-        renderListMitra(); renderListPetugas(); renderListLayanan();
-    } else if (role==='mitra') {
-        document.getElementById('pg-mitra').classList.add('show');
-        document.getElementById('mitra-name-hdr').innerText = loggedInUser.name;
-        renderMitraTable();
-    } else if (role==='petugas') {
-        document.getElementById('pg-petugas').classList.add('show');
-        document.getElementById('petugas-name-hdr').innerText = loggedInUser.name;
-        renderPetugasTable();
-    }
-    resetAutoLogout();
+  }).join('')+'</tr>').join('');
 }
 
-function doLogout() {
-    clearTimeout(autoLogoutTimer);
-    loggedInUser = null;
-    document.getElementById('login-user').value = '';
-    document.getElementById('login-pass').value = '';
-    document.getElementById('login-err').style.display='none';
-    ['pg-admin','pg-mitra','pg-petugas'].forEach(id=>{
-        const el=document.getElementById(id);
-        el.classList.remove('show'); el.classList.add('hidden');
-    });
-    document.getElementById('pg-login').classList.remove('hidden');
+// ===== INLINE EDIT =====
+function editC(el,id,f,tp){
+  if(el.querySelector('input,select'))return;
+  const old=el.innerText.replace(/\s*✎\s*$/,'').trim();
+  el.innerText='';let inp;
+  if(tp==='sm'){inp=document.createElement('select');inp.className='border border-blue-500 rounded px-1 py-0.5 bg-slate-800 text-white text-xs lc';DB.mitra.forEach(m=>{const o=document.createElement('option');o.value=m.name;o.text=m.name;if(m.name===old)o.selected=true;inp.appendChild(o);});}
+  else if(tp==='sk'){inp=document.createElement('select');inp.className='border border-blue-500 rounded px-1 py-0.5 bg-slate-800 text-white text-xs';DB.kerja.forEach(j=>{const o=document.createElement('option');o.value=j;o.text=j;if(j===old)o.selected=true;inp.appendChild(o);});}
+  else if(tp==='sp'){inp=document.createElement('select');inp.className='border border-blue-500 rounded px-1 py-0.5 bg-slate-800 text-white text-xs lc';const no=document.createElement('option');no.value='';no.text='-- TIDAK ADA --';inp.appendChild(no);DB.petugas.forEach(p=>{const o=document.createElement('option');o.value=p.name;o.text=p.name;if(p.name===old)o.selected=true;inp.appendChild(o);});}
+  else{inp=document.createElement('input');inp.type='text';inp.value=old==='-'?'':old;inp.className='ieinp border border-blue-500 rounded px-1 py-0.5 bg-slate-800 text-white text-xs font-bold uppercase w-full min-w-[80px]';}
+  el.appendChild(inp);inp.focus();
+  async function sv(){let v=inp.value.trim();if(tp==='t')v=v.toUpperCase();if(!v)v='-';await saveInline(id,f,v);}
+  inp.addEventListener('blur',sv);inp.addEventListener('keypress',e=>{if(e.key==='Enter')sv();});
+}
+function editD(el,id,f){
+  if(el.querySelector('input'))return;
+  const old=el.innerText.replace(/\s*📅\s*$/,'').trim();
+  el.innerText='';
+  const inp=document.createElement('input');inp.type='date';inp.value=(old==='-'||!old)?'':old;
+  inp.className='border border-blue-500 rounded px-1 py-0.5 bg-slate-800 text-white text-xs';
+  el.appendChild(inp);inp.focus();
+  async function sv(){await saveInline(id,f,inp.value||'-');}
+  inp.addEventListener('blur',sv);inp.addEventListener('change',sv);
 }
 
-// ============================================================
-// ADMIN TAB SWITCH
-// ============================================================
-function switchTab(t) {
-    ['input','semua','konfig'].forEach(n=>{
-        document.getElementById('tab-'+n).style.display='none';
-        document.getElementById('tbtn-'+n).classList.remove('active');
-    });
-    const el = document.getElementById('tab-'+t);
-    el.style.display = (t==='semua'||t==='konfig') ? 'flex' : 'block';
-    document.getElementById('tbtn-'+t).classList.add('active');
-    if (t==='input') { initForms(); setDefaultDates(); }
-    if (t==='semua') { renderAdminTable(); renderLogs(); }
-    if (t==='konfig') { renderListMitra(); renderListPetugas(); renderListLayanan(); }
+// ===== RENDER MITRA =====
+function renderM(){
+  const kw=(document.getElementById('ms')?.value||'').toLowerCase();
+  const tb=document.getElementById('tbm');if(!tb)return;
+  const all=DB.berkas.filter(b=>b.mitra===ME);
+  document.getElementById('mpc').innerText=all.filter(b=>b.status==='On Process').length;
+  document.getElementById('mdn').innerText=all.filter(b=>b.status==='Selesai').length;
+  const data=all.filter(b=>(b.nopol||'').toLowerCase().includes(kw)||(b.bpkb||'').toLowerCase().includes(kw));
+  if(!data.length){tb.innerHTML=`<tr><td colspan="8" class="p-4 text-center text-gray-500 text-xs">TIDAK ADA DATA</td></tr>`;return;}
+  tb.innerHTML=data.map((b,i)=>{
+    const sc=b.status==='Selesai'?'bg-green-500/20 text-green-300 border-green-500/30':'bg-blue-500/20 text-blue-300 border-blue-500/30';
+    return`<tr class="hover:bg-white/5 border-b border-white/5 whitespace-nowrap">
+      <td class="p-2.5 text-gray-400">${i+1}</td>
+      <td class="p-2.5 font-bold text-yellow-400">${b.nopol||''}</td>
+      <td class="p-2.5 text-gray-300">${b.kerja||''}</td>
+      <td class="p-2.5">${b.bpkb||''}</td>
+      <td class="p-2.5 text-gray-400">${b.tglambil||'-'}</td>
+      <td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-bold border ${sc}">${(b.status||'').toUpperCase()}</span></td>
+      <td class="p-2.5 text-xs text-gray-400 max-w-[120px] truncate">${b.catatan||'-'}</td>
+      <td class="p-2.5 font-bold text-green-400">${b.tglkembali||'-'}</td>
+    </tr>`;
+  }).join('');
 }
 
-function setDefaultDates() {
-    const today = new Date().toISOString().split('T')[0];
-    const fa = document.getElementById('f-tgl-ambil');
-    if (fa && !fa.value) fa.value = today;
+// ===== RENDER PETUGAS =====
+function renderP(){
+  const kw=(document.getElementById('ps2')?.value||'').toLowerCase();
+  const tb=document.getElementById('tbp');if(!tb)return;
+  const all=DB.berkas.filter(b=>(b.petugas||'').toLowerCase()===ME.toLowerCase());
+  document.getElementById('ppc').innerText=all.filter(b=>b.status==='On Process').length;
+  document.getElementById('pdn').innerText=all.filter(b=>b.status==='Selesai').length;
+  const data=all.filter(b=>(b.nopol||'').toLowerCase().includes(kw)||(b.bpkb||'').toLowerCase().includes(kw));
+  if(!data.length){tb.innerHTML=`<tr><td colspan="8" class="p-4 text-center text-gray-500 text-xs">TIDAK ADA DATA</td></tr>`;return;}
+  tb.innerHTML=data.map((b,i)=>{
+    const sc=b.status==='Selesai'?'bg-green-500/20 text-green-300 border-green-500/30':'bg-blue-500/20 text-blue-300 border-blue-500/30';
+    return`<tr class="hover:bg-white/5 border-b border-white/5 whitespace-nowrap">
+      <td class="p-2.5 text-gray-400">${i+1}</td>
+      <td class="p-2.5 font-bold text-yellow-400">${b.nopol||''}</td>
+      <td class="p-2.5 text-gray-300">${b.kerja||''}</td>
+      <td class="p-2.5">${b.bpkb||''}</td>
+      <td class="p-2.5 text-gray-400">${b.tglserah||'-'}</td>
+      <td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-bold border ${sc}">${(b.status||'').toUpperCase()}</span></td>
+      <td class="p-2.5 text-blue-300 lc">${b.mitra||''}</td>
+      <td class="p-2.5 text-xs text-gray-400 max-w-[120px] truncate">${b.catatan||'-'}</td>
+    </tr>`;
+  }).join('');
 }
 
-// ============================================================
-// INIT FORMS (dropdown)
-// ============================================================
-function initForms() {
-    // Mitra dropdown
-    const fm = document.getElementById('f-mitra');
-    if (fm) { fm.innerHTML=''; dataMitra.forEach(m=>{ fm.innerHTML+=`<option value="${m.name}">${m.name}</option>`; }); }
-
-    // Petugas dropdown
-    const fp = document.getElementById('f-petugas');
-    if (fp) { fp.innerHTML='<option value="">-- TIDAK ADA --</option>'; dataPetugas.forEach(p=>{ fp.innerHTML+=`<option value="${p.name}">${p.name}</option>`; }); }
-
-    // Layanan dropdown
-    const fl = document.getElementById('f-pengerjaan');
-    if (fl) { fl.innerHTML=''; dataLayanan.forEach(l=>{ fl.innerHTML+=`<option value="${l}">${l}</option>`; }); onPengerjaanChange(); }
+// ===== LOG LOGIN =====
+async function addLog(aksi,siapa){
+  const now=new Date();
+  const tgl=now.toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const jam=now.toLocaleTimeString('id-ID');
+  DB.log.unshift(`[${tgl} ${jam}] ${aksi}: ${siapa}`);
+  if(DB.log.length>80) DB.log=DB.log.slice(0,80);
+  await FS.sl(DB.log);
+}
+function renderLog(){
+  const c=document.getElementById('logc');
+  if(c) c.innerHTML=DB.log.map(l=>`<div>${l}</div>`).join('');
 }
 
-// ============================================================
-// PENGERJAAN CHANGE (MUTASI / BBN)
-// ============================================================
-function onPengerjaanChange() {
-    const val = (document.getElementById('f-pengerjaan')?.value||'').toUpperCase();
-    const isMutasi = val.includes('MUTASI');
-    const isBBN    = val.includes('BBN');
-    const fm = document.getElementById('field-mutasi');
-    const fb = document.getElementById('field-bbn');
-    if (fm) fm.style.display = isMutasi ? 'flex' : 'none';
-    if (fb) fb.style.display = isBBN    ? 'flex' : 'none';
+// ===== CONFIG MITRA =====
+async function savMitra(){
+  const n=document.getElementById('mna').value.trim().toUpperCase();
+  const p=document.getElementById('mpa').value.trim();
+  const ei=document.getElementById('me2').value;
+  if(!n){alert('NAMA MITRA KOSONG!');return;}
+  if(ei!==''){
+    const old=DB.mitra[ei].name;DB.mitra[ei].name=n;if(p)DB.mitra[ei].pass=p;
+    if(old!==n)await Promise.all(DB.berkas.filter(b=>b.mitra===old).map(b=>FS.sb({...b,mitra:n})));
+    alert('MITRA DIUPDATE!');
+  }else{
+    if(DB.mitra.some(m=>m.name===n)){alert('NAMA SUDAH ADA!');return;}
+    DB.mitra.push({name:n,pass:p||'mitra123'});alert('MITRA DITAMBAHKAN!');
+  }
+  await FS.sc('mitraList',DB.mitra);clrMitra();
+}
+async function delMitra(i){if(!confirm('HAPUS MITRA '+DB.mitra[i].name+'?'))return;DB.mitra.splice(i,1);await FS.sc('mitraList',DB.mitra);clrMitra();}
+function edMitra(i){document.getElementById('mna').value=DB.mitra[i].name;document.getElementById('mpa').value=DB.mitra[i].pass;document.getElementById('me2').value=i;document.getElementById('bms').innerText='UPDATE MITRA';document.getElementById('bmx').classList.remove('hidden');}
+function clrMitra(){document.getElementById('mna').value='';document.getElementById('mpa').value='';document.getElementById('me2').value='';document.getElementById('bms').innerText='TAMBAH/UPDATE MITRA';document.getElementById('bmx').classList.add('hidden');}
+function rMitra(){const c=document.getElementById('lmitra');if(!c)return;c.innerHTML=DB.mitra.map((m,i)=>`<tr class="hover:bg-white/5 border-b border-white/5"><td class="p-2 font-bold text-white">${m.name}</td><td class="p-2 text-right space-x-2"><button onclick="edMitra(${i})" class="text-blue-400 font-bold cursor-pointer text-[10px]">EDIT</button><button onclick="delMitra(${i})" class="text-red-400 font-bold cursor-pointer text-[10px]">HAPUS</button></td></tr>`).join('');}
+
+// ===== CONFIG PETUGAS =====
+async function savPtgs(){
+  const n=document.getElementById('pna').value.trim().toUpperCase();
+  const p=document.getElementById('ppa').value.trim();
+  const ei=document.getElementById('pe2').value;
+  if(!n){alert('NAMA PETUGAS KOSONG!');return;}
+  if(ei!==''){
+    const old=DB.petugas[ei].name;DB.petugas[ei].name=n;if(p)DB.petugas[ei].pass=p;
+    if(old!==n)await Promise.all(DB.berkas.filter(b=>b.petugas===old).map(b=>FS.sb({...b,petugas:n})));
+    alert('PETUGAS DIUPDATE!');
+  }else{
+    if(DB.petugas.some(x=>x.name===n)){alert('NAMA SUDAH ADA!');return;}
+    DB.petugas.push({name:n,pass:p||'petugas123'});alert('PETUGAS DITAMBAHKAN!');
+  }
+  await FS.sc('petugasList',DB.petugas);clrPtgs();
+}
+async function delPtgs(i){if(!confirm('HAPUS PETUGAS '+DB.petugas[i].name+'?'))return;DB.petugas.splice(i,1);await FS.sc('petugasList',DB.petugas);clrPtgs();}
+function edPtgs(i){document.getElementById('pna').value=DB.petugas[i].name;document.getElementById('ppa').value=DB.petugas[i].pass;document.getElementById('pe2').value=i;document.getElementById('bps').innerText='UPDATE PETUGAS';document.getElementById('bpx').classList.remove('hidden');}
+function clrPtgs(){document.getElementById('pna').value='';document.getElementById('ppa').value='';document.getElementById('pe2').value='';document.getElementById('bps').innerText='TAMBAH/UPDATE PETUGAS';document.getElementById('bpx').classList.add('hidden');}
+function rPtgs(){const c=document.getElementById('lptgs');if(!c)return;c.innerHTML=DB.petugas.map((p,i)=>`<tr class="hover:bg-white/5 border-b border-white/5"><td class="p-2 font-bold text-white">${p.name}</td><td class="p-2 text-right space-x-2"><button onclick="edPtgs(${i})" class="text-blue-400 font-bold cursor-pointer text-[10px]">EDIT</button><button onclick="delPtgs(${i})" class="text-red-400 font-bold cursor-pointer text-[10px]">HAPUS</button></td></tr>`).join('');}
+
+// ===== CONFIG KERJA =====
+async function savKerja(){
+  const n=document.getElementById('kna').value.trim().toUpperCase();
+  const ei=document.getElementById('ke2').value;
+  if(!n){alert('NAMA LAYANAN KOSONG!');return;}
+  if(ei!==''){const old=DB.kerja[ei];DB.kerja[ei]=n;await Promise.all(DB.berkas.filter(b=>b.kerja===old).map(b=>FS.sb({...b,kerja:n})));alert('LAYANAN DIUPDATE!');}
+  else{if(DB.kerja.includes(n)){alert('LAYANAN SUDAH ADA!');return;}DB.kerja.push(n);alert('LAYANAN DITAMBAHKAN!');}
+  await FS.sc('kerjaList',DB.kerja);clrKerja();
+}
+async function delKerja(i){if(!confirm('HAPUS LAYANAN '+DB.kerja[i]+'?'))return;DB.kerja.splice(i,1);await FS.sc('kerjaList',DB.kerja);clrKerja();}
+function edKerja(i){document.getElementById('kna').value=DB.kerja[i];document.getElementById('ke2').value=i;document.getElementById('bks').innerText='UPDATE LAYANAN';document.getElementById('bkx').classList.remove('hidden');}
+function clrKerja(){document.getElementById('kna').value='';document.getElementById('ke2').value='';document.getElementById('bks').innerText='TAMBAH/UPDATE LAYANAN';document.getElementById('bkx').classList.add('hidden');}
+function rKerja(){const c=document.getElementById('lkerja');if(!c)return;c.innerHTML=DB.kerja.map((k,i)=>`<tr class="hover:bg-white/5 border-b border-white/5"><td class="p-2 font-bold text-white">${k}</td><td class="p-2 text-right space-x-2"><button onclick="edKerja(${i})" class="text-blue-400 font-bold cursor-pointer text-[10px]">EDIT</button><button onclick="delKerja(${i})" class="text-red-400 font-bold cursor-pointer text-[10px]">HAPUS</button></td></tr>`).join('');}
+
+// ===== CHANGE ADMIN PASS =====
+async function changePass(){
+  const o=document.getElementById('ao').value.trim();
+  const n=document.getElementById('an').value.trim();
+  const c=document.getElementById('ac').value.trim();
+  if(!o||!n||!c){alert('SEMUA KOLOM WAJIB DIISI!');return;}
+  if(o.toLowerCase()!==DB.ap.toLowerCase()){alert('PASSWORD SAAT INI SALAH!');return;}
+  if(n!==c){alert('PASSWORD BARU & KONFIRMASI TIDAK SAMA!');return;}
+  if(n.length<6){alert('PASSWORD MINIMAL 6 KARAKTER!');return;}
+  DB.ap=n;await FS.sc('adminPass',n);
+  document.getElementById('ao').value='';document.getElementById('an').value='';document.getElementById('ac').value='';
+  alert('PASSWORD ADMIN BERHASIL DIUBAH!');
 }
 
-// STATUS CHANGE → auto isi tgl kembali
-function onStatusChange() {
-    const st = document.getElementById('f-status')?.value;
-    const tk = document.getElementById('f-tgl-kembali');
-    if (st==='Selesai' && tk && !tk.value) {
-        tk.value = new Date().toISOString().split('T')[0];
-    }
+// ===== PDF ADMIN (PREVIEW) =====
+function previewPDFAdmin(){
+  const {jsPDF}=window.jspdf;
+  const data=getFiltered();
+  const doc=new jsPDF('l','mm','a4');
+  doc.setFontSize(14);doc.text('LAPORAN BERKAS - CV MAJU BERSAMA',14,14);
+  doc.setFontSize(9);doc.text('DICETAK: '+new Date().toLocaleString('id-ID'),14,21);
+  doc.text('TOTAL DATA: '+data.length,14,27);
+  const hs=['#','MITRA','PENGERJAAN','NO.POLISI','NAMA BPKB','TGL AMBIL','TGL KEMBALI','STATUS','PETUGAS'];
+  const xs=[10,22,52,82,110,140,162,184,208];
+  doc.setFont('Helvetica','bold');doc.setFontSize(8);
+  hs.forEach((h,i)=>doc.text(h,xs[i],37));
+  doc.line(10,40,287,40);
+  doc.setFont('Helvetica','normal');
+  let y=47;
+  data.forEach((b,i)=>{
+    if(y>195){doc.addPage();y=20;}
+    const row=[String(i+1),b.mitra||'',b.kerja||'',(b.nopol||'').substring(0,12),(b.bpkb||'').substring(0,14),b.tglambil||'-',b.tglkembali||'-',(b.status||'').toUpperCase(),(b.petugas||'-').substring(0,12)];
+    row.forEach((r,j)=>doc.text(r,xs[j],y));y+=7;
+  });
+  doc.setFontSize(32);doc.setTextColor(230,230,230);doc.setFont('Helvetica','bold');
+  for(let i=1;i<=doc.internal.getNumberOfPages();i++){doc.setPage(i);doc.text('CV MAJU BERSAMA',65,155,{angle:45});}
+  window.open(URL.createObjectURL(doc.output('blob')),'_blank');
 }
 
-// ============================================================
-// SAVE BERKAS
-// ============================================================
-async function saveBerkas(e) {
-    e.preventDefault();
-    const nopol = document.getElementById('f-nopol').value.toUpperCase().trim();
-    const tglAmbil = document.getElementById('f-tgl-ambil').value;
-    if (!nopol) { alert('NOMOR POLISI WAJIB DIISI!'); return; }
-
-    const pengerjaan = document.getElementById('f-pengerjaan').value.toUpperCase();
-    const isMutasi = pengerjaan.includes('MUTASI');
-    const isBBN    = pengerjaan.includes('BBN');
-
-    const b = {
-        id:          Date.now(),
-        mitra:       document.getElementById('f-mitra').value.toUpperCase(),
-        petugas:     document.getElementById('f-petugas').value.toUpperCase() || '-',
-        pengerjaan,
-        nopol,
-        bpkb:        document.getElementById('f-bpkb').value.toUpperCase().trim(),
-        tglAmbil:    tglAmbil || '-',
-        tglSerah:    document.getElementById('f-tgl-serah').value || '-',
-        status:      document.getElementById('f-status').value,
-        tglKembali:  document.getElementById('f-tgl-kembali').value || '-',
-        catatan:     document.getElementById('f-catatan').value.toUpperCase() || '-',
-        catatanPetugas: document.getElementById('f-catatan-petugas').value.toUpperCase() || '-',
-        // Mutasi fields
-        mutasiNama:  isMutasi ? (document.getElementById('f-mutasi-nama').value.toUpperCase()||'-') : '-',
-        mutasiAlamat:isMutasi ? (document.getElementById('f-mutasi-alamat').value.toUpperCase()||'-') : '-',
-        mutasiNopol: isMutasi ? (document.getElementById('f-mutasi-nopol').value.toUpperCase()||'-') : '-',
-        // BBN fields
-        bbnNama:     isBBN ? (document.getElementById('f-bbn-nama').value.toUpperCase()||'-') : '-',
-        bbnAlamat:   isBBN ? (document.getElementById('f-bbn-alamat').value.toUpperCase()||'-') : '-',
-        bbnNopol:    isBBN ? (document.getElementById('f-bbn-nopol').value.toUpperCase()||'-') : '-',
-    };
-
-    const existing = dataBerkas.find(x=>x.nopol===nopol && x.tglAmbil===tglAmbil);
-    if (existing) b.id = existing.id;
-
-    await window.FS.setBerkas(b);
-    logAktivitas('Simpan berkas ['+nopol+'] untuk '+b.mitra);
-    alert('DATA BERKAS BERHASIL DISIMPAN!');
-    document.getElementById('form-berkas').reset();
-    setDefaultDates();
-    initForms();
-    onPengerjaanChange();
+// ===== PDF MITRA =====
+function cetakPDF(role){
+  const {jsPDF}=window.jspdf;
+  const data=role==='mitra'?DB.berkas.filter(b=>b.mitra===ME):DB.berkas.filter(b=>(b.petugas||'').toLowerCase()===ME.toLowerCase());
+  const doc=new jsPDF('l','mm','a4');
+  doc.setFontSize(14);doc.text('LAPORAN BERKAS - CV MAJU BERSAMA',14,14);
+  doc.setFontSize(10);doc.text((role==='mitra'?'MITRA':'PETUGAS')+': '+ME,14,22);
+  doc.text('CETAK: '+new Date().toLocaleDateString('id-ID'),14,28);
+  const hs=['NO.POLISI','PENGERJAAN','NAMA BPKB','TGL AMBIL','STATUS','TGL KEMBALI'];
+  const xs=[14,50,90,130,162,192];
+  doc.setFont('Helvetica','bold');doc.setFontSize(9);
+  hs.forEach((h,i)=>doc.text(h,xs[i],40));
+  doc.line(14,43,280,43);doc.setFont('Helvetica','normal');
+  let y=51;
+  data.forEach(b=>{
+    if(y>190){doc.addPage();y=20;}
+    const row=[b.nopol||'',(b.kerja||'').substring(0,16),(b.bpkb||'').substring(0,18),b.tglambil||'-',(b.status||'').toUpperCase(),b.tglkembali||'-'];
+    row.forEach((r,i)=>doc.text(r,xs[i],y));y+=8;
+  });
+  doc.setFontSize(32);doc.setTextColor(230,230,230);doc.setFont('Helvetica','bold');
+  for(let i=1;i<=doc.internal.getNumberOfPages();i++){doc.setPage(i);doc.text('CV MAJU BERSAMA',65,155,{angle:45});}
+  window.open(URL.createObjectURL(doc.output('blob')),'_blank');
 }
 
-// ============================================================
-// RENDER MITRA TABLE
-// ============================================================
-function renderMitraTable() {
-    const kw = (document.getElementById('mitra-search')?.value||'').toLowerCase();
-    const tbody = document.getElementById('tbody-mitra');
-    if (!tbody) return;
-
-    const byMitra = dataBerkas.filter(b=>b.mitra===loggedInUser.name);
-    document.getElementById('mitra-stat-p').innerText = byMitra.filter(b=>b.status==='On Process').length;
-    document.getElementById('mitra-stat-s').innerText = byMitra.filter(b=>b.status==='Selesai').length;
-
-    const data = byMitra.filter(b=>(b.nopol||'').toLowerCase().includes(kw)||(b.bpkb||'').toLowerCase().includes(kw));
-    if (!data.length) { tbody.innerHTML=`<tr><td colspan="8" style="padding:16px;text-align:center;color:#475569;font-size:11px;">TIDAK ADA DATA</td></tr>`; return; }
-
-    tbody.innerHTML = data.map((b,i)=>{
-        const sc = b.status==='Selesai' ? 'badge-done' : 'badge-process';
-        return `<tr style="border-bottom:1px solid rgba(255,255,255,.05);" class="hover:bg-white/5">
-            <td class="px-3 py-2" style="color:#64748b;font-weight:700;">${i+1}</td>
-            <td class="px-3 py-2 font-bold" style="color:#fbbf24;">${b.nopol||''}</td>
-            <td class="px-3 py-2" style="color:#cbd5e1;">${b.pengerjaan||''}</td>
-            <td class="px-3 py-2" style="color:#e2e8f0;">${b.bpkb||''}</td>
-            <td class="px-3 py-2" style="color:#94a3b8;">${b.tglAmbil||'-'}</td>
-            <td class="px-3 py-2"><span class="px-2 py-0.5 rounded-full ${sc}" style="font-size:10px;font-weight:700;">${(b.status||'').toUpperCase()}</span></td>
-            <td class="px-3 py-2" style="color:#94a3b8;max-width:120px;">${b.catatan||'-'}</td>
-            <td class="px-3 py-2 font-bold" style="color:#34d399;">${b.tglKembali||'-'}</td>
-        </tr>`;
-    }).join('');
-}
-
-// ============================================================
-// RENDER PETUGAS TABLE
-// ============================================================
-function renderPetugasTable() {
-    const kw = (document.getElementById('petugas-search')?.value||'').toLowerCase();
-    const tbody = document.getElementById('tbody-petugas');
-    if (!tbody) return;
-
-    const byPetugas = dataBerkas.filter(b=>(b.petugas||'').toUpperCase()===loggedInUser.name.toUpperCase());
-    document.getElementById('petugas-stat-p').innerText = byPetugas.filter(b=>b.status==='On Process').length;
-    document.getElementById('petugas-stat-s').innerText = byPetugas.filter(b=>b.status==='Selesai').length;
-
-    const data = byPetugas.filter(b=>(b.nopol||'').toLowerCase().includes(kw)||(b.bpkb||'').toLowerCase().includes(kw));
-    if (!data.length) { tbody.innerHTML=`<tr><td colspan="8" style="padding:16px;text-align:center;color:#475569;font-size:11px;">TIDAK ADA DATA</td></tr>`; return; }
-
-    tbody.innerHTML = data.map((b,i)=>{
-        const sc = b.status==='Selesai' ? 'badge-done' : 'badge-process';
-        return `<tr style="border-bottom:1px solid rgba(255,255,255,.05);">
-            <td class="px-3 py-2" style="color:#64748b;font-weight:700;">${i+1}</td>
-            <td class="px-3 py-2 font-bold" style="color:#fbbf24;">${b.nopol||''}</td>
-            <td class="px-3 py-2" style="color:#cbd5e1;">${b.pengerjaan||''}</td>
-            <td class="px-3 py-2" style="color:#e2e8f0;">${b.bpkb||''}</td>
-            <td class="px-3 py-2" style="color:#94a3b8;">${b.tglSerah||'-'}</td>
-            <td class="px-3 py-2"><span class="px-2 py-0.5 rounded-full ${sc}" style="font-size:10px;font-weight:700;">${(b.status||'').toUpperCase()}</span></td>
-            <td class="px-3 py-2 text-blue-300">${b.mitra||''}</td>
-            <td class="px-3 py-2" style="color:#94a3b8;">${b.catatan||'-'}</td>
-        </tr>`;
-    }).join('');
-}
-
-// ============================================================
-// RENDER ADMIN TABLE (dengan drag kolom)
-// ============================================================
-let dragSrcColIdx = null;
-
-function renderAdminTable() {
-    const kw = (document.getElementById('admin-search')?.value||'').toLowerCase();
-    const thead = document.getElementById('admin-thead');
-    const tbody = document.getElementById('admin-tbody');
-    if (!thead||!tbody) return;
-
-    // Header
-    thead.innerHTML = '';
-    const tr = document.createElement('tr');
-    tr.style.cssText = 'background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.1);';
-
-    // # (fixed)
-    const thNum = document.createElement('th');
-    thNum.className='px-2 py-2'; thNum.style.cssText='color:#475569;font-weight:700;white-space:nowrap;font-size:11px;';
-    thNum.innerText='#'; tr.appendChild(thNum);
-
-    // Kolom draggable
-    kolomAdmin.forEach((col,ci)=>{
-        const th = document.createElement('th');
-        th.className='px-2 py-2 drag-col-th';
-        th.style.cssText='color:#94a3b8;font-weight:700;white-space:nowrap;font-size:11px;cursor:grab;';
-        th.draggable=true; th.dataset.ci=ci;
-        th.innerText=col.label;
-        th.addEventListener('dragstart',e=>{ dragSrcColIdx=ci; e.dataTransfer.effectAllowed='move'; });
-        th.addEventListener('dragover', e=>{ e.preventDefault(); th.classList.add('over'); });
-        th.addEventListener('dragleave',()=>{ th.classList.remove('over'); });
-        th.addEventListener('drop',e=>{
-            e.preventDefault(); th.classList.remove('over');
-            const dst=parseInt(th.dataset.ci);
-            if (dragSrcColIdx===null||dragSrcColIdx===dst) return;
-            const tmp=kolomAdmin[dragSrcColIdx];
-            kolomAdmin.splice(dragSrcColIdx,1); kolomAdmin.splice(dst,0,tmp);
-            window.FS.setConfig('kolomAdmin',kolomAdmin);
-            renderAdminTable();
-        });
-        th.addEventListener('dragend',()=>{ dragSrcColIdx=null; document.querySelectorAll('.drag-col-th').forEach(t=>t.classList.remove('over')); });
-        tr.appendChild(th);
-    });
-
-    // AKSI (fixed)
-    const thAksi=document.createElement('th');
-    thAksi.className='px-2 py-2'; thAksi.style.cssText='color:#475569;font-weight:700;font-size:11px;text-align:center;';
-    thAksi.innerText='AKSI'; tr.appendChild(thAksi);
-    thead.appendChild(tr);
-
-    // Body
-    const filtered = dataBerkas.filter(b=>
-        (b.nopol||'').toLowerCase().includes(kw)||
-        (b.bpkb||'').toLowerCase().includes(kw)||
-        (b.mitra||'').toLowerCase().includes(kw)||
-        (b.petugas||'').toLowerCase().includes(kw)
-    );
-
-    if (!filtered.length) {
-        tbody.innerHTML=`<tr><td colspan="${kolomAdmin.length+2}" style="padding:16px;text-align:center;color:#475569;font-size:11px;">TIDAK ADA DATA</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = filtered.map((b,i)=>{
-        const cells = kolomAdmin.map(col=>{
-            const val = b[col.key]||'-';
-            if (col.type==='select-status') {
-                return `<td class="px-2 py-1.5">
-                    <select onchange="changeStatus(${b.id},this.value)" style="border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:2px 4px;background:#1e293b;color:#fff;font-size:10px;">
-                        <option value="On Process" ${b.status==='On Process'?'selected':''}>ON PROCESS</option>
-                        <option value="Selesai" ${b.status==='Selesai'?'selected':''}>SELESAI</option>
-                    </select></td>`;
-            }
-            if (col.type==='date') {
-                return `<td class="px-2 py-1.5 dc" style="color:#94a3b8;white-space:nowrap;" onclick="editDateCell(this,${b.id},'${col.key}')">${val}</td>`;
-            }
-            if (col.type==='select-layanan') {
-                return `<td class="px-2 py-1.5 ec" onclick="editSelectCell(this,${b.id},'${col.key}','layanan')">${val}</td>`;
-            }
-            if (col.type==='select-petugas') {
-                return `<td class="px-2 py-1.5 ec text-teal-300" onclick="editSelectCell(this,${b.id},'${col.key}','petugas')">${val}</td>`;
-            }
-            if (col.key==='mitra') {
-                return `<td class="px-2 py-1.5 ec text-blue-300" onclick="editSelectCell(this,${b.id},'${col.key}','mitra')">${val}</td>`;
-            }
-            return `<td class="px-2 py-1.5 ec" onclick="editTextCell(this,${b.id},'${col.key}')">${val}</td>`;
-        }).join('');
-
-        return `<tr style="border-bottom:1px solid rgba(255,255,255,.05);">
-            <td class="px-2 py-1.5" style="color:#475569;font-weight:700;">${i+1}</td>
-            ${cells}
-            <td class="px-2 py-1.5" style="text-align:center;">
-                <button onclick="deleteBerkas(${b.id})" style="color:#f87171;font-size:10px;font-weight:700;cursor:pointer;background:none;border:none;">HAPUS</button>
-            </td>
-        </tr>`;
-    }).join('');
-}
-
-// ============================================================
-// INLINE EDIT
-// ============================================================
-function editTextCell(el, id, field) {
-    if (el.querySelector('input')) return;
-    const old = el.innerText.replace(' ✎','').trim();
-    el.innerText='';
-    const inp=document.createElement('input');
-    inp.type='text'; inp.value=old==='-'?'':old;
-    inp.className='iup'; inp.style.cssText='border:1px solid #60a5fa;border-radius:4px;padding:2px 4px;background:#1e293b;color:#fff;font-size:10px;font-weight:700;width:100%;text-transform:uppercase;';
-    el.appendChild(inp); inp.focus();
-    const save=async()=>{ let v=inp.value.trim().toUpperCase(); if(!v) v='-'; await inlineSave(id,field,v); };
-    inp.addEventListener('blur',save);
-    inp.addEventListener('keypress',e=>{ if(e.key==='Enter') save(); });
-}
-
-function editDateCell(el, id, field) {
-    if (el.querySelector('input')) return;
-    const old = el.innerText.replace(' 📅','').trim();
-    el.innerText='';
-    const inp=document.createElement('input');
-    inp.type='date'; inp.value=(old==='-'?'':old);
-    inp.style.cssText='border:1px solid #60a5fa;border-radius:4px;padding:2px 4px;background:#1e293b;color:#fff;font-size:10px;';
-    el.appendChild(inp); inp.focus();
-    const save=async()=>{ const v=inp.value||'-'; await inlineSave(id,field,v); };
-    inp.addEventListener('blur',save);
-    inp.addEventListener('change',save);
-}
-
-function editSelectCell(el, id, field, type) {
-    if (el.querySelector('select')) return;
-    const old = el.innerText.replace(' ✎','').trim();
-    el.innerText='';
-    const sel=document.createElement('select');
-    sel.style.cssText='border:1px solid #60a5fa;border-radius:4px;padding:2px 4px;background:#1e293b;color:#fff;font-size:10px;';
-
-    let options=[];
-    if (type==='mitra')   options=dataMitra.map(m=>m.name);
-    if (type==='petugas') options=['-',...dataPetugas.map(p=>p.name)];
-    if (type==='layanan') options=dataLayanan;
-
-    options.forEach(o=>{ sel.innerHTML+=`<option value="${o}" ${o===old?'selected':''}>${o}</option>`; });
-    el.appendChild(sel); sel.focus();
-    const save=async()=>{ const v=sel.value||'-'; await inlineSave(id,field,v); };
-    sel.addEventListener('blur',save);
-    sel.addEventListener('change',save);
-}
-
-async function inlineSave(id, field, val) {
-    const b=dataBerkas.find(x=>x.id===id);
-    if (!b) return;
-    // Auto tglKembali saat status Selesai
-    const updated={...b,[field]:val};
-    if (field==='status'&&val==='Selesai'&&(!b.tglKembali||b.tglKembali==='-')) {
-        updated.tglKembali=new Date().toISOString().split('T')[0];
-    }
-    await window.FS.setBerkas(updated);
-    logAktivitas('[Auto-Save] '+field+' ['+b.nopol+'] diubah');
-}
-
-async function changeStatus(id, newStatus) {
-    const b=dataBerkas.find(x=>x.id===id);
-    if (!b) return;
-    const updated={...b,status:newStatus};
-    if (newStatus==='Selesai'&&(!b.tglKembali||b.tglKembali==='-')) {
-        updated.tglKembali=new Date().toISOString().split('T')[0];
-    }
-    await window.FS.setBerkas(updated);
-    logAktivitas('Ubah status ['+b.nopol+'] → '+newStatus);
-}
-
-async function deleteBerkas(id) {
-    if (!confirm('HAPUS DATA INI?')) return;
-    const b=dataBerkas.find(x=>x.id===id);
-    await window.FS.deleteBerkas(id);
-    logAktivitas('Hapus berkas ['+(b?b.nopol:id)+']');
-}
-
-async function cleanBad() {
-    if (!confirm('HAPUS SEMUA DATA RUSAK (UNDEFINED)?')) return;
-    const n=await window.FS.cleanBad();
-    alert(n===0?'TIDAK ADA DATA RUSAK.':n+' DATA RUSAK DIHAPUS!');
-}
-
-// ============================================================
-// LOG
-// ============================================================
-async function logAktivitas(txt) {
-    const t=new Date().toLocaleTimeString('id-ID');
-    dataLog.unshift('['+t+'] '+txt);
-    if (dataLog.length>80) dataLog=dataLog.slice(0,80);
-    await window.FS.saveLog(dataLog);
-}
-function renderLogs() {
-    const c=document.getElementById('log-container');
-    if (c) c.innerHTML=dataLog.map(l=>`<div>${l}</div>`).join('');
-}
-
-// ============================================================
-// KONFIGURASI — PASSWORD ADMIN
-// ============================================================
-async function ubahPassAdmin() {
-    const lama=document.getElementById('ap-lama').value.trim();
-    const baru=document.getElementById('ap-baru').value.trim();
-    const konfirm=document.getElementById('ap-konfirm').value.trim();
-    if (!lama||!baru||!konfirm) { alert('SEMUA KOLOM WAJIB DIISI!'); return; }
-    if (lama.toLowerCase()!==adminPass.toLowerCase()) { alert('PASSWORD SAAT INI SALAH!'); return; }
-    if (baru!==konfirm) { alert('PASSWORD BARU TIDAK SAMA!'); return; }
-    if (baru.length<6) { alert('PASSWORD MINIMAL 6 KARAKTER!'); return; }
-    adminPass=baru;
-    await window.FS.setConfig('adminPass',baru);
-    document.getElementById('ap-lama').value='';
-    document.getElementById('ap-baru').value='';
-    document.getElementById('ap-konfirm').value='';
-    alert('PASSWORD ADMIN BERHASIL DIUBAH!');
-}
-
-// ============================================================
-// KONFIGURASI — MITRA
-// ============================================================
-async function saveMitra() {
-    const name=document.getElementById('km-name').value.trim().toUpperCase();
-    const pass=document.getElementById('km-pass').value.trim();
-    const idx=document.getElementById('km-edit-idx').value;
-    if (!name) { alert('NAMA MITRA WAJIB DIISI!'); return; }
-    if (idx!=='') {
-        const old=dataMitra[idx].name;
-        dataMitra[idx].name=name;
-        if (pass) dataMitra[idx].pass=pass;
-        if (old!==name) await Promise.all(dataBerkas.filter(b=>b.mitra===old).map(b=>window.FS.setBerkas({...b,mitra:name})));
-        alert('MITRA BERHASIL DIUPDATE!');
-    } else {
-        if (dataMitra.some(m=>m.name===name)) { alert('NAMA MITRA SUDAH ADA!'); return; }
-        dataMitra.push({name,pass:pass||'mitra123'});
-        alert('MITRA BARU DITAMBAHKAN!');
-    }
-    await window.FS.setConfig('mitraList',dataMitra);
-    clearMitraForm();
-}
-function editMitraItem(i) { document.getElementById('km-name').value=dataMitra[i].name; document.getElementById('km-pass').value=dataMitra[i].pass; document.getElementById('km-edit-idx').value=i; document.getElementById('km-btn').innerText='UPDATE MITRA'; document.getElementById('km-batal').style.display='inline-flex'; }
-async function deleteMitraItem(i) { if(!confirm('HAPUS MITRA '+dataMitra[i].name+'?')) return; dataMitra.splice(i,1); await window.FS.setConfig('mitraList',dataMitra); clearMitraForm(); }
-function clearMitraForm() { document.getElementById('km-name').value=''; document.getElementById('km-pass').value=''; document.getElementById('km-edit-idx').value=''; document.getElementById('km-btn').innerText='TAMBAH/UPDATE MITRA'; document.getElementById('km-batal').style.display='none'; }
-function renderListMitra() {
-    const c=document.getElementById('list-mitra'); if(!c) return; c.innerHTML='';
-    dataMitra.forEach((m,i)=>{ c.innerHTML+=`<tr style="border-bottom:1px solid rgba(255,255,255,.06);">
-        <td style="padding:8px;font-weight:700;color:#fff;" class="drag-row" draggable="true" data-type="mitra" data-i="${i}"><span style="color:#475569;font-size:10px;margin-right:6px;">☰</span>${m.name}</td>
-        <td style="padding:8px;text-align:right;">
-            <button onclick="editMitraItem(${i})" style="color:#60a5fa;font-size:10px;font-weight:700;cursor:pointer;background:none;border:none;margin-right:8px;">EDIT</button>
-            <button onclick="deleteMitraItem(${i})" style="color:#f87171;font-size:10px;font-weight:700;cursor:pointer;background:none;border:none;">HAPUS</button>
-        </td></tr>`; });
-    setupRowDrag('list-mitra','mitra');
-}
-
-// ============================================================
-// KONFIGURASI — PETUGAS
-// ============================================================
-async function savePetugas() {
-    const name=document.getElementById('kp-name').value.trim().toUpperCase();
-    const pass=document.getElementById('kp-pass').value.trim();
-    const idx=document.getElementById('kp-edit-idx').value;
-    if (!name) { alert('NAMA PETUGAS WAJIB DIISI!'); return; }
-    if (idx!=='') {
-        const old=dataPetugas[idx].name;
-        dataPetugas[idx].name=name;
-        if (pass) dataPetugas[idx].pass=pass;
-        if (old!==name) await Promise.all(dataBerkas.filter(b=>(b.petugas||'')===old).map(b=>window.FS.setBerkas({...b,petugas:name})));
-        alert('PETUGAS BERHASIL DIUPDATE!');
-    } else {
-        if (dataPetugas.some(p=>p.name===name)) { alert('NAMA PETUGAS SUDAH ADA!'); return; }
-        dataPetugas.push({name,pass:pass||'petugas123'});
-        alert('PETUGAS BARU DITAMBAHKAN!');
-    }
-    await window.FS.setConfig('petugasList',dataPetugas);
-    clearPetugasForm();
-}
-function editPetugasItem(i) { document.getElementById('kp-name').value=dataPetugas[i].name; document.getElementById('kp-pass').value=dataPetugas[i].pass; document.getElementById('kp-edit-idx').value=i; document.getElementById('kp-btn').innerText='UPDATE PETUGAS'; document.getElementById('kp-batal').style.display='inline-flex'; }
-async function deletePetugasItem(i) { if(!confirm('HAPUS PETUGAS '+dataPetugas[i].name+'?')) return; dataPetugas.splice(i,1); await window.FS.setConfig('petugasList',dataPetugas); clearPetugasForm(); }
-function clearPetugasForm() { document.getElementById('kp-name').value=''; document.getElementById('kp-pass').value=''; document.getElementById('kp-edit-idx').value=''; document.getElementById('kp-btn').innerText='TAMBAH/UPDATE PETUGAS'; document.getElementById('kp-batal').style.display='none'; }
-function renderListPetugas() {
-    const c=document.getElementById('list-petugas'); if(!c) return; c.innerHTML='';
-    dataPetugas.forEach((p,i)=>{ c.innerHTML+=`<tr style="border-bottom:1px solid rgba(255,255,255,.06);">
-        <td style="padding:8px;font-weight:700;color:#2dd4bf;" class="drag-row" draggable="true" data-type="petugas" data-i="${i}"><span style="color:#475569;font-size:10px;margin-right:6px;">☰</span>${p.name}</td>
-        <td style="padding:8px;text-align:right;">
-            <button onclick="editPetugasItem(${i})" style="color:#60a5fa;font-size:10px;font-weight:700;cursor:pointer;background:none;border:none;margin-right:8px;">EDIT</button>
-            <button onclick="deletePetugasItem(${i})" style="color:#f87171;font-size:10px;font-weight:700;cursor:pointer;background:none;border:none;">HAPUS</button>
-        </td></tr>`; });
-    setupRowDrag('list-petugas','petugas');
-}
-
-// ============================================================
-// KONFIGURASI — LAYANAN
-// ============================================================
-async function saveLayanan() {
-    const name=document.getElementById('kl-name').value.trim().toUpperCase();
-    const idx=document.getElementById('kl-edit-idx').value;
-    if (!name) { alert('NAMA LAYANAN WAJIB DIISI!'); return; }
-    if (idx!=='') {
-        const old=dataLayanan[idx];
-        dataLayanan[idx]=name;
-        await Promise.all(dataBerkas.filter(b=>b.pengerjaan===old).map(b=>window.FS.setBerkas({...b,pengerjaan:name})));
-        alert('LAYANAN BERHASIL DIUPDATE!');
-    } else {
-        if (dataLayanan.includes(name)) { alert('LAYANAN SUDAH ADA!'); return; }
-        dataLayanan.push(name); alert('LAYANAN DITAMBAHKAN!');
-    }
-    await window.FS.setConfig('layananList',dataLayanan);
-    clearLayananForm();
-}
-function editLayananItem(i) { document.getElementById('kl-name').value=dataLayanan[i]; document.getElementById('kl-edit-idx').value=i; document.getElementById('kl-btn').innerText='UPDATE LAYANAN'; document.getElementById('kl-batal').style.display='inline-flex'; }
-async function deleteLayananItem(i) { if(!confirm('HAPUS LAYANAN '+dataLayanan[i]+'?')) return; dataLayanan.splice(i,1); await window.FS.setConfig('layananList',dataLayanan); clearLayananForm(); }
-function clearLayananForm() { document.getElementById('kl-name').value=''; document.getElementById('kl-edit-idx').value=''; document.getElementById('kl-btn').innerText='TAMBAH/UPDATE LAYANAN'; document.getElementById('kl-batal').style.display='none'; }
-function renderListLayanan() {
-    const c=document.getElementById('list-layanan'); if(!c) return; c.innerHTML='';
-    dataLayanan.forEach((l,i)=>{ c.innerHTML+=`<tr style="border-bottom:1px solid rgba(255,255,255,.06);">
-        <td style="padding:8px;font-weight:700;color:#fff;" class="drag-row" draggable="true" data-type="layanan" data-i="${i}"><span style="color:#475569;font-size:10px;margin-right:6px;">☰</span>${l}</td>
-        <td style="padding:8px;text-align:right;">
-            <button onclick="editLayananItem(${i})" style="color:#60a5fa;font-size:10px;font-weight:700;cursor:pointer;background:none;border:none;margin-right:8px;">EDIT</button>
-            <button onclick="deleteLayananItem(${i})" style="color:#f87171;font-size:10px;font-weight:700;cursor:pointer;background:none;border:none;">HAPUS</button>
-        </td></tr>`; });
-    setupRowDrag('list-layanan','layanan');
-}
-
-// ============================================================
-// DRAG & DROP ROWS (konfigurasi list)
-// ============================================================
-function setupRowDrag(tbodyId, type) {
-    const tbody=document.getElementById(tbodyId);
-    if (!tbody) return;
-    const rows=[...tbody.querySelectorAll('tr')];
-    rows.forEach(row=>{
-        row.addEventListener('dragstart',()=>row.classList.add('dragging'));
-        row.addEventListener('dragend',async ()=>{
-            row.classList.remove('dragging');
-            const newRows=[...tbody.querySelectorAll('tr')];
-            const indices=newRows.map(r=>parseInt(r.querySelector('[data-i]')?.dataset.i||0));
-            if (type==='mitra') { dataMitra=indices.map(i=>dataMitra[i]); await window.FS.setConfig('mitraList',dataMitra); renderListMitra(); initForms(); }
-            if (type==='petugas') { dataPetugas=indices.map(i=>dataPetugas[i]); await window.FS.setConfig('petugasList',dataPetugas); renderListPetugas(); initForms(); }
-            if (type==='layanan') { dataLayanan=indices.map(i=>dataLayanan[i]); await window.FS.setConfig('layananList',dataLayanan); renderListLayanan(); initForms(); }
-        });
-    });
-    tbody.addEventListener('dragover',e=>{
-        e.preventDefault();
-        const dragging=tbody.querySelector('.dragging');
-        const after=getAfterEl(tbody,e.clientY);
-        if (dragging) { if(!after) tbody.appendChild(dragging); else tbody.insertBefore(dragging,after); }
-    });
-}
-function getAfterEl(container,y) {
-    return [...container.querySelectorAll('tr:not(.dragging)')].reduce((cl,ch)=>{
-        const box=ch.getBoundingClientRect(), off=y-box.top-box.height/2;
-        if (off<0&&off>cl.offset) return {offset:off,element:ch};
-        return cl;
-    },{offset:Number.NEGATIVE_INFINITY}).element;
-}
-
-// ============================================================
-// PDF MITRA
-// ============================================================
-function mitraPDF() {
-    const {jsPDF}=window.jspdf;
-    const doc=new jsPDF();
-    const data=dataBerkas.filter(b=>b.mitra===loggedInUser.name);
-    doc.setFontSize(15); doc.text('LAPORAN KEPENGURUSAN BERKAS',14,18);
-    doc.setFontSize(10);
-    doc.text('MITRA: '+loggedInUser.name,14,26);
-    doc.text('TGL CETAK: '+new Date().toLocaleDateString('id-ID'),14,32);
-    doc.setFont('Helvetica','bold'); doc.setFontSize(9);
-    ['NO.POL','PENGERJAAN','NAMA BPKB','TGL AMBIL','STATUS','TGL KEMBALI'].forEach((h,i)=>{ doc.text(h,[14,44,80,122,152,172][i],44); });
-    doc.line(14,47,198,47);
-    doc.setFont('Helvetica','normal'); let y=55;
-    data.forEach(b=>{
-        if(y>272){doc.addPage();y=20;}
-        doc.text(b.nopol||'',14,y); doc.text((b.pengerjaan||'').substring(0,14),44,y);
-        doc.text((b.bpkb||'').substring(0,14),80,y); doc.text(b.tglAmbil||'-',122,y);
-        doc.text((b.status||'').toUpperCase(),152,y); doc.text(b.tglKembali||'-',172,y); y+=8;
-    });
-    doc.setFontSize(36); doc.setTextColor(220,220,220); doc.setFont('Helvetica','bold');
-    for(let i=1;i<=doc.internal.getNumberOfPages();i++){doc.setPage(i); doc.text('CV MAJU BERSAMA',36,148,{angle:45});}
-    window.open(URL.createObjectURL(doc.output('blob')),'_blank');
+// ===== EXPORT EXCEL =====
+function exportExcel(){
+  const data=getFiltered();
+  if(!data.length){alert('TIDAK ADA DATA UNTUK DIEXPORT!');return;}
+  const rows=data.map((b,i)=>({
+    'NO':i+1,
+    'MITRA':b.mitra||'',
+    'PENGERJAAN':b.kerja||'',
+    'NO. POLISI':b.nopol||'',
+    'NAMA BPKB':b.bpkb||'',
+    'TGL AMBIL':b.tglambil||'-',
+    'TGL KEMBALI':b.tglkembali||'-',
+    'STATUS':b.status||'',
+    'CATATAN MITRA':b.catatan||'-',
+    'PETUGAS':b.petugas||'-',
+    'TGL SERAH PETUGAS':b.tglserah||'-',
+    'CATATAN PETUGAS':b.catpetugas||'-',
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'BERKAS');
+  const tgl=new Date().toLocaleDateString('id-ID').replace(/\//g,'-');
+  XLSX.writeFile(wb,'LAPORAN_BERKAS_'+tgl+'.xlsx');
 }
 </script>
 </body>
