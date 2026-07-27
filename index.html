@@ -61,7 +61,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            /* Warna latar hitam disamakan dengan background asli GIF agar frame tidak terlihat */
+            /* Warna latar hitam agar menyatu sempurna dengan background frame asli GIF */
             background-color: #000000; 
             z-index: 99999;
             display: flex;
@@ -551,17 +551,21 @@
         </div>
     </section>
 
-    <!-- JS untuk menghilangkan loading saat web siap -->
+    <!-- JS untuk menghilangkan loading saat web siap dengan delay buatan -->
     <script>
         window.addEventListener('load', function() {
             const preloader = document.getElementById('preloader');
-            // Tambahkan class hidden untuk efek fade-out
-            preloader.classList.add('hidden');
             
-            // Hapus sepenuhnya dari tampilan setelah animasi fade-out selesai
-            setTimeout(() => {
-                preloader.style.display = 'none';
-            }, 500); // 500ms mengikuti durasi transition di CSS
+            // Tambahkan delay selama 2 detik (2000 milidetik) sebelum loading menghilang
+            setTimeout(function() {
+                // Tambahkan class hidden untuk efek fade-out
+                preloader.classList.add('hidden');
+                
+                // Hapus sepenuhnya dari tampilan setelah animasi fade-out selesai
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                }, 500); 
+            }, 2000); // 2000 milidetik = 2 detik
         });
     </script>
 </body>
