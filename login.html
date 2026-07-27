@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Maju Bersama - Mitra Solusi & Layanan Profesional</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* Palet Warna Corporate Dark / Bonafide */
+            --bg-main: #0a0f1f;       /* Background paling gelap */
+            --bg-section: #11182c;    /* Background section */
+            --bg-card: #182046;       /* Sesuai warna dasar logo */
+            
+            --text-heading: #ffffff;
+            --text-main: #cbd5e1;     /* Abu-abu terang elegan */
+            --text-muted: #94a3b8;
+            
+            --accent: #38bdf8;        /* Biru terang untuk highlight */
+            --accent-gold: #d4af37;   /* Sentuhan emas untuk kesan premium */
+            --accent-glow: rgba(56, 189, 248, 0.2);
+            
+            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Reset & Global Fix (Mengatasi Web Goyang di Mobile) */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        html, body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            overflow-x: hidden; /* Kunci horizontal scroll */
+            width: 100%;
+            scroll-behavior: smooth;
+        }
+
+        /* --- NAVBAR PREMIUM --- */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 6%;
+            background: rgba(10, 15, 31, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: var(--transition);
+        }
+
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-heading);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .logo-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-card); 
+            border-radius: 10px;
+            padding: 6px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: var(--transition);
+        }
+
+        .logo:hover .logo-wrapper {
+            transform: scale(1.05);
+            border-color: rgba(212, 175, 55, 0.4);
+        }
+
+        .logo-svg {
+            display: block;
+            height: 34px; 
+            width: auto;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 25px;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            font-weight: 500;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover {
+            color: var(--text-heading);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background-color: var(--accent);
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Tombol Admin & CTA Nav */
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .admin-btn {
+            background: transparent;
+            color: var(--accent-gold);
+            border: 1px solid var(--accent-gold);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .admin-btn:hover {
+            background: var(--accent-gold);
+            color: var(--bg-main);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .cta-nav {
+            background: var(--text-heading);
+            color: var(--bg-main);
+            padding: 9px 22px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .cta-nav:hover {
+            background: var(--accent);
+            color: var(--text-heading);
+            box-shadow: 0 8px 20px var(--accent-glow);
+        }
+
+        /* --- HERO SECTION --- */
+        header.hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 120px 6% 60px;
+            background: radial-gradient(circle at top right, #182046 0%, #0a0f1f 60%);
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 650px;
+            z-index: 2;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(212, 175, 55, 0.1);
+            color: var(--accent-gold);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            letter-spacing: 0.5px;
+            animation: fadeInUp 0.8s 0.2s forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .hero h1 {
+            font-size: 3.8rem; /* Lebih besar di desktop */
+            color: var(--text-heading);
+            line-height: 1.15;
+            margin-bottom: 25px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            animation: fadeInUp 0.8s 0.4s forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .hero h1 span {
+            color: var(--accent);
+            background: linear-gradient(90deg, var(--accent) 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-main);
+            margin-bottom: 40px;
+            line-height: 1.7;
+            animation: fadeInUp 0.8s 0.6s forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+            animation: fadeInUp 0.8s 0.8s forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--text-heading);
+            padding: 15px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--transition);
+            box-shadow: 0 10px 25px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px var(--accent-glow);
+            background: #2ea8e6;
+        }
+
+        /* --- VISUAL ELEMENTS --- */
+        .hero-visual {
+            position: relative;
+            width: 450px;
+            height: 450px;
+            animation: floatGraphic 8s ease-in-out infinite alternate;
+        }
+
+        .glow-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 350px;
+            height: 350px;
+            background: var(--bg-card);
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            z-index: 0;
+        }
+
+        .card-floating {
+            position: absolute;
+            background: rgba(17, 24, 44, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 20px 25px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 2;
+            animation: floatCard 4s ease-in-out infinite alternate;
+        }
+
+        .card-floating i {
+            font-size: 2rem;
+            color: var(--accent-gold);
+            background: rgba(212, 175, 55, 0.1);
+            padding: 15px;
+            border-radius: 14px;
+        }
+
+        .card-1 { top: 15%; left: -30px; }
+        .card-2 { bottom: 20%; right: -20px; animation-delay: 2s; }
+
+        /* --- SECTIONS UMUM --- */
+        section {
+            padding: 100px 6%;
+        }
+
+        .services {
+            background: var(--bg-section);
+            border-top: 1px solid rgba(255,255,255,0.02);
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 650px;
+            margin: 0 auto 60px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            color: var(--text-heading);
+            margin-bottom: 15px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        .service-card {
+            background: var(--bg-main);
+            padding: 45px 35px;
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.03);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(56, 189, 248, 0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-main) 100%);
+        }
+
+        .service-card i {
+            font-size: 2.5rem;
+            color: var(--accent);
+            margin-bottom: 25px;
+            transition: var(--transition);
+        }
+
+        .service-card h3 {
+            font-size: 1.4rem;
+            color: var(--text-heading);
+            margin-bottom: 15px;
+        }
+
+        .service-card p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        /* --- ABOUT SECTION --- */
+        .about-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .about-text h2 {
+            font-size: 2.5rem;
+            color: var(--text-heading);
+            margin-bottom: 25px;
+        }
+
+        .about-text p {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: var(--text-main);
+            font-weight: 500;
+            margin-top: 15px;
+        }
+
+        .feature-item i {
+            color: var(--accent-gold);
+            font-size: 1.2rem;
+        }
+
+        .about-box {
+            background: linear-gradient(145deg, var(--bg-card) 0%, var(--bg-section) 100%);
+            padding: 50px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        
+        .about-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 5px; height: 100%;
+            background: var(--accent-gold);
+            border-radius: 30px 0 0 30px;
+        }
+
+        .about-box h3 {
+            font-size: 1.6rem;
+            color: var(--text-heading);
+            margin-bottom: 15px;
+        }
+
+        /* --- FOOTER / KONTAK --- */
+        .contact-info {
+            background: var(--bg-section);
+        }
+
+        .contact-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 40px;
+            background: var(--bg-card);
+            padding: 50px;
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .contact-details h3 {
+            font-size: 2rem;
+            color: var(--text-heading);
+            margin-bottom: 20px;
+        }
+
+        .contact-details p {
+            color: var(--text-main);
+            font-size: 1.05rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .contact-details p i {
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+
+        /* --- KEYFRAMES --- */
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes floatGraphic {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-20px); }
+        }
+        @keyframes floatCard {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-10px); }
+        }
+
+        /* --- RESPONSIVE MOBILE FIX --- */
+        @media (max-width: 968px) {
+            .nav-links, .cta-nav {
+                display: none; /* Sembunyikan menu link di mobile agar rapi */
+            }
+            /* Tombol Admin tetap muncul di mobile tapi lebih ringkas */
+            .admin-btn {
+                padding: 6px 14px;
+                font-size: 0.85rem;
+            }
+            .admin-btn span {
+                display: none; /* Sembunyikan teks "Admin" di layar sangat kecil, sisakan ikon */
+            }
+            
+            header.hero {
+                flex-direction: column;
+                justify-content: center;
+                text-align: center;
+                padding: 130px 5% 60px;
+            }
+            
+            .hero-content {
+                width: 100%;
+                margin: 0 auto;
+            }
+            
+            /* SKALA TIPOGRAFI DIPERKECIL AGAR TIDAK GOYANG/LEBAR */
+            .hero h1 { 
+                font-size: 2.2rem; 
+                line-height: 1.3;
+                margin-bottom: 20px;
+            }
+            .hero p { 
+                font-size: 1rem; 
+                margin-bottom: 30px; 
+            }
+            
+            .hero-buttons {
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 12px;
+                width: 100%;
+            }
+            .btn-primary { width: 100%; justify-content: center; }
+
+            .hero-visual { display: none; }
+            
+            .about-container { grid-template-columns: 1fr; gap: 40px; }
+            .section-header h2, .about-text h2 { font-size: 1.8rem; }
+            
+            .contact-container { padding: 30px 20px; text-align: center; justify-content: center; }
+            .contact-details p { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigasi -->
+    <nav>
+        <a href="#" class="logo">
+            <!-- Logo Box Warna Dasar -->
+            <div class="logo-wrapper">
+                <svg class="logo-svg" viewBox="0 0 450 380" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="25" y="25" width="400" height="330" rx="70" ry="70" fill="#182046" />
+                    <!-- Huruf MB Diubah Warnanya Agar Terlihat Jelas di Dark Mode (Putih/Gold) -->
+                    <path d="M 90 280 L 90 130 C 90 100, 115 90, 140 110 L 175 140 L 210 110 C 235 90, 260 100, 260 130 L 260 280 L 215 280 L 215 170 L 185 195 L 155 170 L 155 280 Z" fill="#ffffff" />
+                    <path d="M 285 280 L 285 130 C 285 110, 305 95, 335 95 L 380 95 C 410 95, 425 115, 425 140 C 425 155, 410 175, 385 180 C 415 185, 430 205, 430 230 C 430 260, 405 280, 375 280 Z M 330 135 L 330 170 L 365 170 C 375 170, 385 165, 385 152 C 385 140, 375 135, 365 135 Z M 330 210 L 330 245 L 375 245 C 385 245, 390 235, 390 227 C 390 220, 385 210, 375 210 Z" fill="#ffffff" />
+                </svg>
+            </div>
+            Maju Bersama
+        </a>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li><a href="#">Beranda</a></li>
+                <li><a href="#layanan">Layanan</a></li>
+                <li><a href="#tentang">Tentang</a></li>
+                <li><a href="#kontak">Kontak</a></li>
+            </ul>
+            <div class="btn-group">
+                <a href="https://cvmajubersama.com/login" class="admin-btn">
+                    <i class="fa-solid fa-user-shield"></i> <span>Login Admin</span>
+                </a>
+                <a href="https://wa.me/6285260337498" class="cta-nav" target="_blank">Hubungi Kami</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Utama (Hero Section) -->
+    <header class="hero">
+        <div class="hero-content">
+            <div class="badge">
+                <i class="fa-solid fa-gem"></i> Premium Corporate Service
+            </div>
+            <h1>Menghadirkan Kemudahan untuk <span>Setiap Perjalanan</span> Anda</h1>
+            <p>Maju Bersama hadir sebagai mitra profesional untuk mengakselerasi seluruh kebutuhan administrasi, pembaharuan berkala, serta manajemen operasional armada Anda dengan tingkat keamanan data dan akurasi tinggi.</p>
+            <div class="hero-buttons">
+                <a href="https://wa.me/6285260337498" class="btn-primary" target="_blank">Konsultasi Eksklusif <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+        </div>
+        
+        <!-- Elemen Visual Animatif (Hanya di Desktop) -->
+        <div class="hero-visual">
+            <div class="glow-circle"></div>
+            <div class="card-floating card-1">
+                <i class="fa-solid fa-shield-halved"></i>
+                <div>
+                    <h4 style="color: var(--text-heading); font-size: 1.1rem;">Legalitas Valid</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Akuntabilitas terjamin</p>
+                </div>
+            </div>
+            <div class="card-floating card-2">
+                <i class="fa-solid fa-bolt"></i>
+                <div>
+                    <h4 style="color: var(--text-heading); font-size: 1.1rem;">Akurasi Cepat</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Tepat waktu & terstruktur</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Bagian Layanan / Fitur -->
+    <section class="services" id="layanan">
+        <div class="section-header">
+            <h2>Cakupan Solusi Profesional</h2>
+            <p style="color: var(--text-muted); font-size: 1.1rem; margin-top:10px;">Manajemen holistik untuk memastikan mobilitas dan kelengkapan dokumen aset bergerak perusahaan serta pribadi Anda selalu dalam status prima.</p>
+        </div>
+        <div class="services-grid">
+            <div class="service-card">
+                <i class="fa-solid fa-file-signature"></i>
+                <h3>Pembaruan Periode Berkala</h3>
+                <p>Pengelolaan masa berlaku lembar pengesahan resmi secara rutin (tahunan maupun lima tahunan) tanpa perlu menghadapi kompleksitas birokrasi.</p>
+            </div>
+            <div class="service-card">
+                <i class="fa-solid fa-building-shield"></i>
+                <h3>Manajemen Hak Kepemilikan</h3>
+                <p>Penyelesaian administrasi mutlak aset bergerak, termasuk peralihan dan sinkronisasi legalitas antar pihak dengan prosedur yang jelas dan aman.</p>
+            </div>
+            <div class="service-card">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <h3>Validasi Silang & Mutasi</h3>
+                <p>Pengawalan eksekutif untuk proses verifikasi unit secara fisik serta perpindahan domisili administrasi lintas wilayah dengan efisiensi tinggi.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bagian Tentang Kami -->
+    <section class="about" id="tentang">
+        <div class="about-container">
+            <div class="about-text">
+                <h2>Integritas & Kecepatan dalam Satu Pintu</h2>
+                <p>Maju Bersama merupakan institusi profesional berbasis di Banda Aceh yang didedikasikan untuk menjembatani efisiensi waktu klien dalam menangani dokumen vital mobilitas darat.</p>
+                <p>Kami menerapkan standar operasional korporat ketat, memastikan setiap berkas ditangani dengan kerahasiaan penuh, pelacakan yang transparan, dan berlandaskan pada regulasi yang sah.</p>
+                <div style="margin-top: 30px;">
+                    <div class="feature-item"><i class="fa-solid fa-check-double"></i> <span>Penanganan oleh ahli tersertifikasi</span></div>
+                    <div class="feature-item"><i class="fa-solid fa-check-double"></i> <span>Privasi data klien terenkripsi & aman</span></div>
+                    <div class="feature-item"><i class="fa-solid fa-check-double"></i> <span>Sistem penjemputan berkas on-demand</span></div>
+                </div>
+            </div>
+            <div class="about-box">
+                <h3>Dedikasi Pelayanan Prima</h3>
+                <p style="margin-bottom: 25px;">Reputasi kami dibangun di atas kepercayaan korporasi dan individu yang menginginkan kebebasan dari beban administratif operasional. Percayakan pada kami, dan fokuslah pada bisnis Anda.</p>
+                <a href="https://wa.me/6285260337498" class="btn-primary" target="_blank" style="display:inline-flex; width: fit-content;"><i class="fa-brands fa-whatsapp" style="font-size: 1.2rem;"></i> Diskusikan Kebutuhan Anda</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bagian Informasi Kontak & Alamat -->
+    <section class="contact-info" id="kontak">
+        <div class="contact-container">
+            <div class="contact-details">
+                <h3>Kantor Pusat Operasional</h3>
+                <p><i class="fa-solid fa-building"></i> Jl. Mesjid No. 5, Surien, Kec. Meuraxa, Kota Banda Aceh</p>
+                <p><i class="fa-solid fa-headset"></i> Layanan Klien: 0852-6033-7498</p>
+            </div>
+            <div>
+                <a href="https://wa.me/6285260337498" class="btn-primary" target="_blank" style="padding: 16px 35px;"><i class="fa-solid fa-paper-plane"></i> Kirim Pesan Langsung</a>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>
